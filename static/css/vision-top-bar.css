@@ -1,0 +1,1085 @@
+/*
+    Keyframes
+*/
+/* Provides a background colour pulsing mechanism for top-bar menu items. */
+@keyframes red-pulse {
+    0%, 100% {
+        background-color: var(--vision-ui-navy);
+    }
+
+    50% {
+        background-color: var(--vision-ui-red);
+    }
+}
+
+
+/*
+    Input styling and standardisation.
+    These were moved from vision.common.cs to pave the way for a refresh.
+*/
+input, textarea {
+    color: #000;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--vision-ui-lightest-grey);
+    border: none;
+    border-radius: 2px;
+    transition: background-color 0.5s ease;
+    resize: none;
+}
+
+/* Styling for inputs excluding textarea. */
+input, select {
+    /*
+        Ensures all inputs have a standard height (except textarea).
+        Also doubles to improve empty input heights in iOS browser.
+    */
+    height: 40px;
+    width: 35%;
+}
+
+select {
+    padding-left: 0.5rem;
+}
+
+input:not([type="checkbox"]):not(input[type="radios"]):focus, textarea:focus {
+    /** Important is required to ensure the style is still applied when more-specific rules alter the input background colour. */
+    background-color: var(--vision-ui-light-grey) !important;
+}
+
+input:invalid, input:out-of-range, textarea:invalid, textarea:out-of-range {
+    border: var(--vision-ui-red) 1px solid;
+    outline: none;
+    background-color: #FDEDEC;
+}
+
+input[type="checkbox"], input[type="radios"] {
+    margin: 0;
+    padding: 0;
+    height: 35px;
+    cursor: pointer;
+    /* Required to remove default browser styling. */
+    -moz-appearance: none;
+    /* Required to remove default browser styling. */
+    -webkit-appearance: none;
+    vertical-align: middle;
+    background-image: url('../images/admin-cancel-white.png');
+    background-size: 15px;
+    background-color: var(--vision-ui-red);
+    transition: background-color 0.5s ease, background-image 0.5s ease;
+    /* Remove the outline which produces a square box around a circular input. */
+    outline: none;
+}
+
+    input[type="checkbox"]:checked, input[type="radios"]:checked {
+        background-image: url('../images/confirm.png');
+        background-color: var(--vision-ui-green);
+    }
+
+input[type="checkbox"] {
+    width: 100%;
+    border-radius: 3px;
+}
+
+input[type="radios"] {
+    width: 35px;
+    border-radius: 50%;
+}
+
+    /* Styles for radios button labels. */
+    input[type="radios"] + label {
+        /* Ensures the label is inline with the radios button. */
+        display: inline-block;
+        font-size: 0.75rem;
+        padding-left: 10px;
+        cursor: pointer;
+    }
+
+    input[type="checkbox"]:disabled,
+    input[type="radios"]:disabled {
+        /* !important required to overwrite custom display styles. */
+        background-color: var(--vision-ui-light-grey) !important;
+    }
+
+
+
+/*
+    Additional Top-Bar styling.
+*/
+#top-bar {
+    background-color: var(--vision-ui-navy);
+}
+
+    #top-bar .top-bar-item.notify:not(:hover) {
+        /* Included because Edge cannot change the background colour in keyframes without the property being set first .*/
+        /*background-color: var(--vision-ui-red);*/
+        /*animation: red-pulse 2s infinite;*/
+    }
+
+    #top-bar .top-bar-item.toggled,
+    #top-bar .top-bar-item:hover {
+        background-color: var(--vision-ui-red);
+    }
+
+    #top-bar #mnu-territory-checks > img {
+        /* Hacks for image size */
+        width: 70% !important;
+        height: 70% !important;
+        margin: 15% !important;
+    }
+
+
+/*
+    Main styling.
+    All elements except top-bar live within Main.
+*/
+#main {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden; /* Prevents horrid overflow when animating right-hand pane in-out. */
+}
+
+
+
+/*
+    The map container.
+*/
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+
+
+/*
+    Side Pane Styling.
+*/
+.side-pane {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 350px;
+    display: none;
+    z-index: 1000;
+}
+
+#left-pane {
+    left: 0;
+    box-shadow: 4px 0px 8px -4px var(--vision-ui-boxshadow-colour);
+}
+
+#right-pane {
+    right: 0;
+    box-shadow: -4px 0px 8px -4px var(--vision-ui-boxshadow-colour);
+}
+
+.side-pane-ext {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: none;
+    background-color: #fff;
+    z-index: 1100; /* This should be above z-index for div.side-pane. */
+}
+
+#left-pane-ext {
+    left: 350px;
+    right: 0;
+    border-left: 1px solid var(--vision-ui-lightest-grey);
+}
+
+#right-pane-ext {
+    left: 0;
+    right: 350px;
+    border-right: 1px solid var(--vision-ui-lightest-grey);
+}
+
+.side-pane-content,
+.side-pane-ext-content {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* Side and Side-Extension panes hold multiple content which is displayed when needed. When displaying, this should be set to flex. */
+    display: none;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+    .side-pane-content > header,
+    .side-pane-ext-content > header,
+    .side-pane-content > footer,
+    .side-pane-ext-content > footer {
+        /* Allows the header element to shrink in it's container, maximising space for the body. */
+        flex-shrink: 0;
+    }
+
+    .side-pane-content > header {
+        background-color: var(--vision-ui-dark-grey);
+    }
+
+    .side-pane-content > .body,
+    .side-pane-ext-content > .body {
+        /* Allows the body to grow to take up as much space as is available within the container. */
+        flex-grow: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+        .side-pane-content > .body.padded,
+        .side-pane-ext-content > .body.padded {
+            padding: 10px;
+        }
+
+    /* Side-Extension content can get large - allow scroll to work in both directions. */
+    .side-pane-ext-content > .body {
+        overflow: auto;
+    }
+
+
+
+/*
+    Styles for elements within the side panes.
+    Often, these overwrite global styles.
+*/
+
+/* Styling for all side-pane-content header children (where not a div element). */
+.side-pane-content > header > *:not(div),
+.side-pane-ext-content > header > *:not(div) {
+    text-align: center;
+    /* Removes bolder highlighting from h1-6 elements.*/
+    font-weight: lighter;
+    /* Padding on left and right prevents longer text hitting the very sides */
+    padding: 0 20px;
+}
+
+/* All side-pane-content header children. */
+.side-pane-content > header > * {
+    color: #fff;
+}
+
+/* Override default h2 styles within side pane content headers */
+.side-pane-content > header > h2 {
+    /* Equivalent of 12px on default settings. */
+    font-size: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+/* Used for grouping an input and a label. */
+.side-pane-content > .body div.input-container {
+    margin-top: 10px;
+}
+
+/* Provides an input wrapper which allows inline colour buttons to sit next to an associated input */
+.side-pane-content > .body div.input-with-actions {
+    display: flex;
+}
+
+    /* Overrides input width, allowing it to flex to accomodate inline buttons */
+    .side-pane-content > .body div.input-with-actions > input {
+        flex: 1 1 100%;
+    }
+
+    /* Overrides button width, setting a minimum of 50px */
+    .side-pane-content > .body div.input-with-actions > .button-colour {
+        flex: 1 0 50px;
+    }
+
+/* As side-pane-content header elements use h1 and h2 for titles, the body content uses h3 as its main content header. */
+.side-pane-content > .body h3 {
+    border-bottom: 1px solid #000;
+    padding-bottom: 4px;
+}
+
+/* Additional styling for .nice-select boxes within side pane content. */
+.side-pane-content > .body .nice-select {
+    width: 100%;
+    /* TODO - We have to specifically clear the float value to cater for legacy styles. This will be removed in the future. */
+    float: none;
+}
+
+    /* Additional styling for all except the first colour button within a button group */
+    .side-pane-content > .body .button-group > .button-colour:nth-child(1n+2) {
+        margin-top: 10px;
+    }
+
+
+
+/*
+    Side Pane Content >> List Items
+*/
+.side-pane-content .list-item-group > h2 {
+    background-color: var(--vision-ui-grey);
+    color: #fff;
+    margin: 0;
+    /* Pads 10px from the left and the (background image width + 2 margins) from the right */
+    padding: 0 2.5rem 0 10px;
+    /* Equivalent of 40px on default settings */
+    height: 2.5rem;
+    /* Equivalent of 40px on default settings */
+    line-height: 2.5rem;
+    background-position: right 0.5rem center;
+    /* TODO - Can this move to 60%? */
+    /* Equivalent of 24px on default settings */
+    background-size: 1.5rem;
+    /* Equivalent of 12px on default settings */
+    font-size: 0.75rem;
+}
+
+.side-pane-content .list-item {
+    flex: auto;
+    transition: background 0.5s, border-color 0.5s;
+    border-bottom: 2px solid var(--vision-ui-lightest-grey);
+}
+
+    /* Additional styles when the list item is clickable. */
+    .side-pane-content .list-item.clickable:hover {
+        background-color: var(--vision-ui-lightest-grey);
+        cursor: pointer;
+    }
+
+    .side-pane-content .list-item > header {
+        padding: 20px 10px;
+    }
+
+    .side-pane-content .list-item > footer {
+        display: flex;
+        /* Ensures that when hovering the footer content, only the list-item highlights */
+        background-color: #fff;
+    }
+
+/*
+    Additional styles for the layer control and legend.
+*/
+#layer-control .list-item {
+    /* Required for the positioning of the unavailable message used in the layer control. */
+    position: relative;
+    border-left: 6px solid transparent;
+}
+
+#layer-control .list-item.active {
+    border-left-color: var(--vision-ui-green);
+}
+
+#layer-control .list-item.unavailable {
+    border-left-color: var(--vision-ui-red);
+}
+
+#layer-control .list-item:not(.active):not(.unavailable):hover {
+    border-left-color: var(--vision-ui-light-grey);
+}
+
+#layer-control .list-item.unavailable > header > h5 {
+    color: var(--vision-ui-red);
+}
+
+#layer-control .list-item > .unavailable-message {
+    display: flex;
+    position: absolute;
+    top: 0;
+    /** Hide the element to the left for the whole width plus the border-left thickness of the parent .list-item element. */
+    left: calc(-100% - 6px);
+    width: 100%;
+    height: 100%;
+    background-color: var(--vision-ui-red);
+    color: #fff;
+    align-items: center;
+    cursor: pointer;
+    transition: left 0.5s;
+    /* Prevents spamming the animation when the cursor passes briefly over the list-item. */
+    transition-delay: 0.2s;
+}
+
+    #layer-control .list-item > .unavailable-message > p {
+        width: 100%;
+        align-self: stretch;
+        align-items: center;
+        margin: auto 10px;
+        text-align: center;
+    }
+
+/* Moves the unavailable message over the unavailable list-item within the layer control. */
+#layer-control .list-item.unavailable:hover > .unavailable-message {
+    left: 0;
+}
+
+#layer-control .list-item > footer > .layer-reorder {
+    background-image: url("../images/layer-reorder.png");
+    cursor: move;
+}
+
+    /* TODO - Can't this simply be made into a .clickable? */
+    #layer-control .list-item > footer > .layer-reorder:hover {
+        background-color: var(--vision-lightest-grey)
+    }
+
+#layer-control .list-item > footer > .filter-status {
+    background-image: url("../images/layer-filter.png");
+}
+
+#layer-control .list-item > footer > .layer-labels,
+#layer-control .list-item > footer > .spacer {
+    /* Allows the element to stretch to fill the space. */
+    flex: auto;
+    /* Overrides the colour given by colour class */
+    color: #000;
+    /* Equiv of 10px at default settings. */
+    font-size: 0.625rem;
+}
+
+#layer-control .list-item > footer > .layer-labels:hover {
+    /* Overriding the colour given by colour class means we have to set on hover */
+    color: #fff;
+}
+
+#layer-control .list-item > footer > .layer-actions {
+    background-image: url("../images/actions-white.png");
+}
+
+/* Additional styles for h5-6 elements within list-item headers within the layer control and legend. */
+#layer-control .list-item > header > h6,
+#layer-control .list-item > header > h5,
+#legend .list-item > header > h6,
+#legend .list-item > header > h5 {
+    margin: 0;
+    padding-top: 2px;
+    padding-right: 10px;
+    /* Overwrite standard h5-h6 font weight. */
+    font-weight: normal;
+    border-right: 6px solid transparent;
+}
+
+/* Additional styles for list-item footer within the legend. */
+/*#legend div.list-item > footer {*/
+    /* Makes the items within the footer list vertically. */
+    /*display: block;*/
+    /* Provides a nice spacing between the last list-item and the bottom. */
+    /*padding-bottom: 5px;
+}*/
+
+/* Additional styling for list-item footer children within the legend. */
+/*#legend .list-item > footer > p {
+    margin: 0px;
+    padding-left: 45px;
+    background-position: left 13px center;
+    background-size: auto 24px;
+    line-height: 30px;
+    font-size: 11px;
+}*/
+
+#legend div.list-item > footer {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-gap: 5px;
+    padding: 1rem;
+}
+
+#legend div.list-item > footer > div {
+    display: grid;
+    grid-template-columns: 30px auto;
+    align-items: center;
+    grid-gap: 5px;
+}
+
+#legend div.list-item > footer > div > svg {
+    justify-self: center;
+}
+
+/*
+    Styles for the search pane.
+*/
+#search-phrase {
+    /* The search phrase input is part of the header. We need to overwrite the font colour. */
+    color: #000;
+    border-bottom: 1px solid var(--vision-ui-dark-grey);
+    /* Reset the input padding */
+    padding: 10px;
+}
+
+    #search-phrase:invalid, #search-phrase:out-of-range {
+        border-bottom: var(--vision-ui-red) 1px solid;
+    }
+
+    #search-phrase:valid, #search-phrase:in-range {
+        border-bottom: var(--vision-ui-green) 1px solid;
+        outline: none;
+        background-color: #EDFDEC;
+    }
+
+/* Forces the first button as far right as possible - subsequently moving all others. */
+#searchPane .list-item > footer > .btn-small:first-of-type {
+    margin-left: auto;
+}
+
+#searchPane .list-item > footer > .search-result-center {
+    background-image: url('../images/center-on.png');
+}
+
+#searchPane .list-item > footer > .search-result-zoom {
+    background-image: url('../images/go-to.png');
+}
+
+#searchPane .list-item > footer > .search-result-pin {
+    background-image: url('../images/pin.png');
+}
+
+#searchPane .list-item > footer > .search-result-remove {
+    background-image: url('../images/close-white.png');
+}
+
+#searchPane .list-item > footer > .search-result-create {
+    background-image: url('../images/add-white.png');
+}
+
+/* Explicitly hide the remove button unless in the pinned-results section */
+#searchPane > div.body > div:not(#search-results-pinned) > .list-item > footer > .search-result-remove {
+    display: none;
+}
+
+/* Explicitly hide the pin button if in the pinned-results section */
+#search-results-pinned > .list-item > footer > .search-result-pin {
+    display: none;
+}
+
+/*
+    Styles for classification elements (which can display in several areas).
+*/
+.side-pane .classification {
+    cursor: pointer;
+    /*background-size: auto 24px;
+    background-position: left 8px center;*/
+    display: grid;
+    grid-template-columns: 30px auto;
+    align-items: center;
+}
+
+    .side-pane .classification > p {
+        /*margin-left: 40px;*/
+        padding: 20px 10px;
+        transition: all 0.5s ease;
+        border-radius: 2px;
+    }
+
+/*
+    Styles for the information window.
+*/
+#iw-classification-wrapper {
+    background-color: #fff;
+}
+
+/* Information Window - Main Pane - Classification Area */
+#iw-classification {
+    line-height: 40px; /* Controls the height of the div */
+    text-align: center;
+}
+
+.record-data {
+    width: 100%;
+    padding: 10px 0px;
+    text-align: center;
+}
+
+#iw-main > .body > .record-data.clickable:hover {
+    cursor: pointer;
+    background-color: var(--vision-ui-lightest-grey);
+    background-image: url('../images/information-grey.png');
+    background-position: right 20px center;
+    background-size: 20px;
+}
+
+.record-data > h2,
+.record-data > p {
+    margin: 5px 10px;
+}
+
+.record-data > h2 {
+    font-size: 0.75rem;
+}
+
+.record-data > p {
+    font-size: 1rem;
+    /* TODO - Why not Vision UI Orange? */
+    color: #ff8000;
+}
+
+#iw-main > .body > .record-data > p.not-set {
+    color: var(--vision-ui-red);
+}
+
+/* Override styles for number inputs within the fyn settings pane */
+#iw-fyn > .body > input[type=number] {
+    width: calc(50% - 5px);
+}
+
+    /* Override styles for colour buttons within the fyn settings pane and immediately after a number input */
+    #iw-fyn > .body > input[type=number] + .button-colour {
+        /* Brings the button onto the same line as the previous element */
+        display: inline-block;
+        /* Calculates the appropriate width, allowing for a margin (see margin-left) */
+        width: calc(50% - 5px);
+        /* Overrides the top margin so our controls sit correctly under the header */
+        margin-top: 0;
+        /* Forces a small gap from the previous number element */
+        margin-left: 10px;
+    }
+
+#iw-notes > .body > .note {
+    margin-top: 10px;
+    padding: 10px;
+    border-bottom: var(--vision-ui-lightest-grey) solid 2px;
+}
+
+    #iw-notes > .body > .note > p {
+        padding: 10px;
+    }
+
+    #iw-notes > .body > .note > h6 {
+        padding: 0 10px;
+    }
+
+    #iw-notes > .body > .note > .button-colour {
+        width: 50%;
+        display: inline-block;
+        margin-top: 0;
+    }
+
+#iw-notes-edit > .body > textarea {
+    height: 500px;
+}
+
+#iw-notes a {
+    font-weight: bold;
+}
+
+#iw-multi-options > .body > .list-item {
+    /*background-position: left 15px center;
+    background-size: auto 24px;*/
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    align-items: center;
+}
+
+    #iw-multi-options > .body > .list-item:hover > header {
+        background-image: url('../images/click-through.png');
+        background-size: 16px;
+        background-position: right 8px center;
+    }
+
+    #iw-multi-options > .body > .list-item > svg {
+        justify-self: center;
+    }
+
+    /*#iw-multi-options > .body > .list-item > header > * {
+        margin-left: 40px;
+    }*/
+
+/* Specifically styles .above elements in the information window demographic report. */
+#iw-demo-report-ext table td.above {
+    color: var(--vision-ui-green);
+}
+
+/* Specifically styles .below elements in the information window demographic report. */
+#iw-demo-report-ext table td.below {
+    color: var(--vision-ui-red);
+}
+
+/*
+    Additional styling for information window report options.
+*/
+#iw-demo-report > .body > .report-option {
+    box-sizing: border-box;
+    padding: 10px;
+    border-bottom: var(--vision-ui-lightest-grey) solid 2px;
+}
+    #iw-demo-report > .body > .report-option.selected {
+        background-color: var(--vision-ui-green);
+        color: white;
+    }
+
+    #iw-demo-report > .body > .report-option > h3 {
+        background-color: transparent;
+        border: none;
+    }
+
+    #iw-demo-report > .body > .report-option > p {
+        margin-bottom: 10px;
+    }
+
+    #iw-demo-report > .body > .report-option.selected > div.button-colour {
+        display: none;
+    }
+
+
+/* Share recipient email inputs do not have a margin. This adds it to all but the first for a cleaner look. */
+#iw-share-sendlink > div.body > input[type=email]:nth-of-type(n+2) {
+    margin-top: 10px;
+}
+
+/*
+    Notification Pane Styles.
+*/
+#notifications .list-item > header > h4 {
+    margin-top: 0;
+}
+
+#notifications .list-item > header > * {
+    color: #000;
+}
+
+#notifications .list-item > header a {
+    display: inline-block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: inherit;
+}
+
+#notifications .list-item > footer > *:not(.button-colour) {
+    flex: auto;
+    text-align: center;
+    line-height: 40px;
+}
+
+#notifications .list-item > footer > .button-colour {
+    background-size: 24px;
+}
+
+#notifications .list-item.normal {
+    border-left: 6px solid var(--vision-ui-blue);
+    color: var(--vision-ui-blue);
+}
+
+#notifications .list-item.normal > footer > .button-colour {
+    background-image: url('../images/notification-mark-normal.png');
+}
+
+#notifications .list-item.high {
+    border-left: 6px solid var(--vision-ui-orange);
+    color: var(--vision-ui-orange);
+}
+
+#notifications .list-item.high > footer > .button-colour {
+    background-image: url('../images/notification-mark-high.png');
+}
+
+#notifications .list-item.critical {
+    border-left: 6px solid var(--vision-ui-red);
+    color: var(--vision-ui-red);
+}
+
+#notifications .list-item.critical > footer > .button-colour {
+    background-image: url('../images/notification-mark-critical.png');
+}
+
+#notifications .list-item > footer > .button-colour:hover {
+    background-image: url('../images/confirm.png');
+}
+
+/*
+    Territory Check Pane Styles
+*/
+#territory-checks .list-item > header > h4 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#territory-checks .list-item .open-check-age {
+    margin: 8px 0;
+    padding: 2px 10px;
+    border-radius: 4px;
+    text-align: right;
+    font-size: 0.65rem;
+}
+
+    #territory-checks .list-item .open-check-age.normal {
+        color: white;
+        background-color: var(--vision-ui-green);
+    }
+
+    #territory-checks .list-item .open-check-age.warning {
+        color: white;
+        background-color: var(--vision-ui-orange);
+    }
+
+    #territory-checks .list-item .open-check-age.critical {
+        color: white;
+        background-color: var(--vision-ui-red);
+    }
+/*
+    Area Editor Styles.
+*/
+#areaeditor-stage2-ext table tr > *:first-child {
+    min-width: 200px;
+}
+
+#areaeditor-stage2-ext table tr.areaeditor-status-row {
+    background-color: #fff;
+}
+
+    #areaeditor-stage2-ext table tr.areaeditor-status-row > * {
+        border-radius: 8px 8px 0px 0px;
+    }
+
+    #areaeditor-stage2-ext table tr.areaeditor-status-row > .current {
+        background-color: var(--vision-ui-green);
+    }
+
+    #areaeditor-stage2-ext table tr.areaeditor-status-row > .changing {
+        background-color: var(--vision-ui-blue);
+    }
+
+    #areaeditor-stage2-ext table tr.areaeditor-status-row > .deleting {
+        background-color: var(--vision-ui-red);
+    }
+
+#areaeditor-stage2-ext table tr.demographic-title-row {
+    background-color: var(--vision-ui-dark-grey);
+    color: #fff;
+}
+
+#areaeditor-stage2-ext table > tbody td:not(:first-of-type) {
+    padding: 10px 30px;
+}
+
+#areaeditor-stage2-ext table thead tr > th {
+    font-size: 0.75rem;
+}
+
+#areaeditor-stage2-ext table > tbody td.decreased {
+    background-position: right 8px center;
+    background-size: 16px auto;
+    background-image: url('../images/value-decrease.png');
+}
+
+#areaeditor-stage2-ext table > tbody td.increased {
+    background-position: right 8px center;
+    background-size: 16px auto;
+    background-image: url('../images/value-increase.png');
+}
+
+/*
+    Demographic Dashboard Styles.
+*/
+
+#iw-demo-report-ext .demographic-group {
+    border-bottom: 10px solid var(--vision-ui-lightest-grey);
+}
+
+    #iw-demo-report-ext .demographic-group > header {
+        display: flex;
+        min-height: 350px;
+    }
+
+        #iw-demo-report-ext .demographic-group > header > .options {
+            flex: 0 0 25%;
+        }
+
+            #iw-demo-report-ext .demographic-group > header > .options > .button-colour {
+                box-sizing: border-box;
+                padding-left: 10px;
+                text-align: left;
+            }
+
+                #iw-demo-report-ext .demographic-group > header > .options > .button-colour.selected {
+                    background-color: var(--vision-ui-blue);
+                    color: white;
+                }
+
+            #iw-demo-report-ext .demographic-group > header > .chart {
+                display: flex;
+                flex: 0 0 75%;
+                margin: 10px;
+            }
+
+                #iw-demo-report-ext .demographic-group > header > .chart > p {
+                    width: 100%;
+                    margin: auto;
+                    font-size: 2rem;
+                    color: var(--vision-ui-orange);
+                    text-align: center;
+                }
+
+    #iw-demo-report-ext .demographic-group > footer {
+        background-color: var(--vision-ui-dark-grey);
+    }
+
+        #iw-demo-report-ext .demographic-group > footer > .custom-demographic {
+            display: flex;
+            border-bottom: 2px solid var(--vision-ui-lightest-grey);
+        }
+
+        #iw-demo-report-ext .demographic-group > footer > .custom-demographic > p {
+            display: inline-block;
+            width: 50%;
+            color: white;
+            font-size: 0.875rem;
+            padding: 0 10px;
+            line-height: 2.5rem;
+        }
+
+            #iw-demo-report-ext .demographic-group > footer > .custom-demographic > p:last-of-type {
+                text-align: right;
+            }
+
+div.layer-data-grid {
+    display: grid;
+    grid-template-columns: 33.3% 33.4% 33.3%;
+    justify-content: inherit;
+}
+
+    div.layer-data-grid > .layer-data-item {
+        /** Allows us to easily center labels. */
+        display: flex;
+        /* Handles horizontal centering and removes need for setting width on content. */
+        align-content: center;
+        /* Handles vertical centering. */
+        align-items: center;
+        border: 1px solid var(--vision-ui-blue);
+        margin: 5px;
+        padding: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        background-position: right 8px center;
+        background-size: 16px;
+        color: var(--vision-ui-blue);
+    }
+
+        div.layer-data-grid > .layer-data-item:not(.disabled):hover {
+            background-color: var(--vision-ui-blue);
+            color: white;
+        }
+
+        div.layer-data-grid > .layer-data-item.selected {
+            background-color: var(--vision-ui-blue);
+            color: white;
+            background-image: url(../Content/images/confirm.png);
+        }
+
+        div.layer-data-grid > .layer-data-item.selected:hover {
+            background-color: var(--vision-ui-blue-alt);
+        }
+
+        div.layer-data-grid > .layer-data-item.disabled {
+            border-color: var(--vision-ui-light-grey);
+            background-color: var(--vision-ui-lightest-grey);
+            color: var(--vision-ui-dark-grey);
+            cursor: not-allowed;
+        }
+
+        div.layer-data-grid > .layer-data-item > p {
+            /* Fills the container, less any margin. */
+            width: 100%;
+            text-align: center;
+            margin: 10px 30px;
+        }
+
+#labels-add {
+    color: var(--vision-ui-blue);
+}
+
+#labels-add.disabled {
+    cursor: not-allowed;
+    color: var(--vision-ui-dark-grey);
+}
+
+.labels-reorder,
+.labels-delete {
+    margin: auto;
+    height: 20px;
+    width: 20px;
+    background-size: 20px;
+    background-position: center;
+}
+
+.labels-reorder {
+    background-image: url('../images/layer-reorder.png');
+    cursor: move;
+}
+
+.labels-delete {
+    background-image: url('../images/admin-cancel.png');
+    cursor: pointer;
+}
+
+/*
+    Styles for User Views
+*/
+.user-views-container {
+    display: grid;
+    grid-template-columns: 100%;
+    /* grid-gap: 1rem; */
+    margin: 0;
+    background-color: var(--vision-ui-lightest-grey);
+}
+
+    .user-views-container > .user-view {
+        border-bottom: 1px solid var(--vision-ui-light-grey);
+        margin: 1rem;
+    }
+
+        .user-views-container > .user-view > header,
+        .user-views-container > .user-view > footer {
+            flex-shrink: 0;
+            flex-grow: 0;
+        }
+
+        .user-views-container > .user-view > header {
+            text-transform: uppercase;
+        }
+
+            .user-views-container > .user-view > header > h3 {
+                text-align: left;
+                padding-left: 0.5rem;
+            }
+
+                .user-views-container > .user-view > header > h3 > span.active-view {
+                    font-size: inherit;
+                    color: var(--vision-ui-green);
+                    margin-left: 0.5rem;
+                }
+
+        .user-views-container > .user-view > .view-layers {
+            padding: 0.5rem;
+            flex-grow: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+            .user-views-container > .user-view > .view-layers > .view-layer {
+                /* padding-left: 2rem; */
+                background-position: left 0.5rem center;
+                background-size: 1rem;
+                border: 1px solid var(--vision-ui-light-grey);
+                border-radius: 4px;
+                padding: 0.5rem;
+                padding-left: 2rem;
+                /* flex-grow: 1; */
+                margin: 0;
+                background-color: white;
+            }
+
+        .user-views-container > .user-view > footer {
+            display: grid;
+            grid-template-columns: 1fr auto;
+        }
+
+            .user-views-container > .user-view > footer > .default-view {
+                grid-column-start: 1;
+                align-self: center;
+                margin: 0 0.5rem;
+                color: var(--vision-ui-dark-grey);
+                font-weight: 700;
+            }
+
+            .user-views-container > .user-view > footer > .text-button {
+                grid-column-start: 2;
+            }

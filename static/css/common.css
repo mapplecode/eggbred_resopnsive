@@ -1,0 +1,906 @@
+/*
+    Root variables for property standardisation.
+*/
+:root {
+    --vision-ui-atlas-red: #E63433;
+    --vision-ui-red: #E74C3C;
+    --vision-ui-red-alt: #EC7063;
+    --vision-ui-blue: #3498DB;
+    --vision-ui-blue-alt: #5DADE2;
+    --vision-ui-orange: #E67E22;
+    --vision-ui-orange-alt: #EB984E;
+    --vision-ui-green: #27AE60;
+    --vision-ui-green-alt: #52BE80;
+    --vision-ui-yellow: #F1C40F;
+    --vision-ui-yellow-alt: #F4D03F;
+    --vision-ui-navy: #172434;
+    --vision-ui-dark-grey: #484848;
+    --vision-ui-dark-grey-alt: #606060;
+    --vision-ui-grey: #969696;
+    --vision-ui-light-grey: #CCC;
+    --vision-ui-lightest-grey: #EEE;
+    --vision-ui-boxshadow-colour: rgba(0,0,0,0.6);
+}
+
+* {
+    font-size: 1rem;
+    /* Prevents the need to apply on all elements displaying images. */
+    background-repeat: no-repeat;
+    /* Most, if not all background images are centered in Vision. */
+    background-position: center;
+
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    /* This is required to prevent the value of 1rem being changed. */
+    font-size: 1rem;
+    overflow-x: hidden;
+}
+
+h1 {
+    /* Equivalent of 20px on default settings. */
+    font-size: 1.25rem;
+    margin: 1.25rem 0;
+}
+
+h2 {
+    /* Equivalent of 16px on default settings. */
+    font-size: 1.125rem;
+    margin: 1.125rem 0;
+}
+
+h3 {
+    /* Equivalent of 16px on default settings. */
+    font-size: 1rem;
+    margin: 1rem 0;
+}
+
+h4 {
+    /* Equivalent of 14px on default settings. */
+    font-size: 0.875rem;
+    margin: 0.875rem 0;
+}
+
+h5 {
+    /* Equivalent of 12px on default settings. */
+    font-size: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+h6 {
+    /* Equivalent of 11px on default settings. */
+    font-size: 0.6875rem;
+    margin: 0.6875rem 0;
+}
+
+p, li, ol, ul {
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    /* List containers always need a little left-margin to cater for "bullets" */
+    margin-left: 1rem;
+}
+
+/* Provides spacing to list elements for all but the first and last instance. */
+ul li,
+ol li {
+    margin: 0.5rem 0;
+}
+
+    ul li:first-child,
+    ol li:first-child {
+        margin-top: 0 !important;
+    }
+
+        ul li:last-child,
+        ol li:last-child {
+            margin-bottom: 0 !important;
+        }
+
+/* Ensures that the last instance of a list element has a top margin, unless it is the only one. */
+/*ul li:not(:first-child):last-child {
+    margin-top: 0.5rem;
+}*/
+
+a {
+    /* This nicely forces embedded <a> tags to inherit the font colour of their containing element. */
+    color: inherit;
+    /* This nicely forces embedded <a> tags to inherit the font size of their containing element. */
+    font-size: inherit;
+    /* Remove all text decoration as standard. */
+    text-decoration: none;
+    /* Pointer cursor */
+    cursor: pointer;
+}
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+/* Ensure that any embedded <i> elements take on the formatting of their parent element. */
+i {
+    font-size: inherit;
+}
+
+/* Exists for Edge-specific issues - removes the clear button which is difficult to listen for in change tracking. */
+input::-ms-clear {
+    display: none;
+}
+
+/* Removes default styling on iOS browsers for buttons */
+input[type=submit] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+input[type=date] {
+    /* Ensures iOS browser respects width settings. The input will still function as a date picker. */
+    -webkit-appearance: textfield;
+}
+
+
+
+/*
+    Table styling and standardisation.
+*/
+table {
+    border-collapse: collapse;
+}
+
+div.side-pane-ext-content table {
+    width: 100%;
+}
+
+table > thead {
+    background-color: var(--vision-ui-navy);
+    color: #fff;
+}
+
+table th {
+    padding: 20px 10px;
+    font-size: 0.875rem;
+}
+
+table td {
+    padding: 10px;
+    font-size: 0.75rem;
+}
+
+/*
+    Internal borders for cells
+*/
+    table td:not(:last-of-type) {
+        /*border-right: 1px solid #aaa;*/
+        border-right: 1px solid var(--vision-ui-light-grey);
+    }
+
+/* Defaults all cell content to centered. */
+table th,
+table td {
+    text-align: center;
+}
+
+/* All 'all-left' tables, all cell content is left-aligned. */
+table.all-left th,
+table.all-left td {
+    text-align: left;
+}
+
+/* On 'first-left' tables, the first cell's content is left-aligned. */
+table.first-left th:first-child,
+table.first-left td:first-child {
+    text-align: left;
+}
+
+/**
+    Provides spacing when a table cell contains multiple HTML elements.
+*/
+table td *:not(:first-child) {
+    margin-top: 0.5rem;
+
+}
+table td *:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+/*
+    Alternate background colour for even rows.
+*/
+table > tbody tr:nth-child(even) {
+    /*background-color: #f4f4f4;*/
+    background-color: var(--vision-ui-lightest-grey);
+}
+
+/**
+    Provides alternative colour for even rows. Without this, the input becomes lost with the row colour.
+    Not applied to checkbox and radio box.
+*/
+table > tbody tr:nth-child(even) input:not([type="checkbox"]):not([type="radio"]) {
+    background-color: white;
+}
+
+table tr > td {
+
+}
+
+table > tbody > tr > td .text-button {
+    line-height: initial;
+}
+
+/* Display values for the paged table's paging controls. */
+table.paged > tfoot .paged-controls {
+    display: flex;
+    flex-direction: row;
+    /* Aligns all vertically. */
+    align-items: center;
+}
+
+    /* Styles for the current page info within a paged table's paging controls. */
+    table.paged > tfoot .paged-controls > .page-info {
+        flex-grow: 1;
+        margin: auto;
+        text-align: center;
+        color: var(--vision-ui-grey);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+/* Removes the padding from cells in paged table footers. */
+table.paged > tfoot td {
+    padding: 0;
+}
+
+/* Prevents the collapse of rows with empty cells when we "fill" the paged table. */
+table.paged > tbody > tr > *:empty::after {
+    /* Adds an escaped &nbsp */
+    content: '\00a0';
+}
+
+/* Provides formatting for final table body rows. */
+table > tbody > tr.summary-row > td {
+    font-weight: 700;
+}
+
+/*
+Vision V Loader
+*/
+@keyframes vision-v-flip {
+    0%, 100% {
+        /* Backrgound image is ignored by Edge (not in CSS spec) */
+        background-image: url("../images/Vision-V-Colour.png");
+        transform: rotateY(0deg);
+    }
+
+    50% {
+        /* Backrgound image is ignored by Edge (not in CSS spec) */
+        background-image: url("../images/Vision-V-Mono.png");
+        transform: rotateY(180deg);
+    }
+} .v-loader {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.75);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    /* Centers the content on both axis */
+    justify-content: center;
+}
+    /* Applies a psuedo element within a .v-loader element*/
+    .v-loader:after {
+        content: "";
+        height: 110px;
+        width: 100px;
+        /* Edge cannot change background image in keyframes so we hard set here. */
+        background-image: url("../images/Vision-V-Colour.png");
+        background-size: 100%;
+        background-repeat: no-repeat;
+        z-index: inherit;
+        animation: vision-v-flip 2s infinite;
+    }
+/*
+    Buttons
+*/
+.button-colour {
+    /* Equiv of 40px at default settings */
+    height: 2.5rem;
+    width: 100%;
+    /* Equiv of 40px at default settings */
+    line-height: 2.5rem;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    transition: background-color 0.5s;
+    cursor: pointer;
+    /* Buttons do NOT require selection. */
+    user-select: none;
+}
+    /* Overwrites styles from .button-colour when also using btn-small*/
+    .button-colour.btn-small {
+        /* Equiv of 0 0 40 at default settings */
+        flex: 0 0 2.5rem;
+        width: 2.5rem;
+        /* Equivalent of 24px at default settings */
+        /* TODO - Can this change to 60%? */
+        background-size: 1.5rem;
+    }
+
+    .button-colour.blue {
+        background-color: var(--vision-ui-blue);
+    }
+
+    .button-colour.blue:hover {
+        background-color: var(--vision-ui-blue-alt);
+    }
+
+    .button-colour.blue-rev {
+        background-color: #fff;
+        color: var(--vision-ui-blue);
+    }
+
+    .button-colour.blue-rev:hover {
+        background-color: var(--vision-ui-blue);
+        color: #fff;
+    }
+
+    .button-colour.red {
+        background-color: var(--vision-ui-red);
+    }
+
+    .button-colour.red:hover {
+        background-color: var(--vision-ui-red-alt);
+    }
+
+    .button-colour.red-rev {
+        background-color: #fff;
+        color: var(--vision-ui-red);
+    }
+
+    .button-colour.red-rev:hover {
+        background-color: var(--vision-ui-red);
+        color: #fff;
+    }
+
+    .button-colour.green {
+        background-color: var(--vision-ui-green);
+    }
+
+    .button-colour.green:hover {
+        background-color: var(--vision-ui-green-alt);
+    }
+
+    .button-colour.green-rev {
+        background-color: #fff;
+        color: var(--vision-ui-green);
+    }
+
+    .button-colour.green-rev:hover {
+        background-color: var(--vision-ui-green);
+        color: #fff;
+    }
+
+    .button-colour.orange {
+        background-color: var(--vision-ui-orange);
+    }
+
+    .button-colour.orange:hover {
+        background-color: var(--vision-ui-orange-alt);
+    }
+
+    .button-colour.orange-rev {
+        background-color: #fff;
+        color: var(--vision-ui-orange);
+    }
+
+    .button-colour.orange-rev:hover {
+        background-color: var(--vision-ui-orange);
+        color: #fff;
+    }
+
+    .button-colour.white {
+        background-color: #fff;
+    }
+
+    .button-colour.white:hover {
+        background-color: #ccc;
+    }
+
+    .button-colour.disabled {
+        background-color: var(--vision-ui-dark-grey) !important;
+    }
+
+    .button-colour.disabled:hover {
+        background-color: var(--vision-ui-dark-grey-alt) !important;
+    }
+
+.button-colour.disabled:hover,
+.text-button.disabled:hover {
+    cursor: not-allowed;
+}
+
+.text-button {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    line-height: 2.5rem;
+    padding: 0 1rem;
+    margin: 5px;
+    border-radius: 2px;
+    text-align: center;
+    font-weight: bold;
+    background-color: transparent;
+    transition: background-color 0.5s, color 0.5s;
+    cursor: pointer;
+    /* Prevents odd-looking buttons when forced to shrink. */
+    flex-shrink: 0;
+    /* Buttons do NOT require selection. */
+    user-select: none;
+}
+
+.text-button:hover {
+    text-decoration: underline;
+}
+
+.text-button.disabled {
+    color: var(--vision-ui-dark-grey) !important;
+}
+
+    .text-button.disabled:hover {
+        color: var(--vision-ui-dark-grey-alt) !important;
+    }
+
+    .text-button.blue {
+        color: var(--vision-ui-blue);
+    }
+
+        .text-button.blue:hover {
+            color: var(--vision-ui-blue-alt);
+        }
+
+    .text-button.green {
+        color: var(--vision-ui-green);
+    }
+
+        .text-button.green:hover {
+            color: var(--vision-ui-green-alt);
+        }
+
+    .text-button.red {
+        color: var(--vision-ui-red);
+    }
+
+        .text-button.red:hover {
+            color: var(--vision-ui-red-alt);
+        }
+
+    .text-button.orange {
+        color: var(--vision-ui-orange);
+    }
+
+        .text-button.orange:hover {
+            color: var(--vision-ui-orange-alt);
+        }
+
+
+/*
+    Dialog Box Styles
+*/
+.dialog-box-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 90000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dialog-box-main {
+    height: 500px;
+    width: 800px;
+    transition: height 0.25s linear;
+    background-color: white;
+    /* Horizontal >> Vertical >> Blur Radius >> Spread Radius >> Colour */
+    box-shadow: 0px 0px 10px 2px rgba(255,255,255,0.6);
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+.dialog-box-main.tiny {
+    width: 400px;
+    /** Simply lets the height expand to fit content. */
+    height: auto;
+    max-height: 500px;
+}
+
+.dialog-box-main.large {
+    height: 100%;
+}
+
+.dialog-box-main > header, .dialog-box-main > footer {
+    /* Allows the header element to shrink in it's container, maximising space for the body. */
+    flex-shrink: 0;
+}
+
+.dialog-box-main > header {
+    display: inherit;
+    height: 3.75rem;
+    border-bottom: 1px solid #ccc;
+}
+
+.dialog-box-main > header > .left, .dialog-box-main > header > .right {
+    height: inherit;
+    width: 3.75rem;
+}
+
+.dialog-box-main > header > .middle {
+    height: inherit;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.dialog-box-main > header > .middle > * {
+    margin: 0.5rem 0;
+}
+
+#dialog-box-back,
+.dialog-box-back {
+    height: inherit;
+    background-image: url(../images/back-white.png);
+    background-size: 1.5rem;
+    background-position: center center;
+}
+
+#dialog-box-cancel,
+.dialog-box-cancel {
+    height: inherit;
+    background-image: url(../images/close-white.png);
+    background-size: 1.5rem;
+    background-position: center center;
+}
+
+.dialog-box-main > footer {
+    border-top: 1px solid #ccc;
+    display: flex;
+}
+
+.dialog-box-main > .body {
+    /* Allows the body to grow to take up as much space as is available within the container. */
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overflow: hidden auto;
+}
+
+.dialog-box-content {
+    margin: 20px 60px;
+}
+
+    /* Additional styling for all but the first p element. */
+    .dialog-box-content p:nth-of-type(1n+1) {
+        margin-top: 0.5rem;
+    }
+
+    .dialog-box-content ul {
+        margin: 10px 0;
+    }
+
+    .dialog-box-content li{
+        margin-left: 1rem;
+    }
+
+.dialog-box-content > section {
+    margin-top: 30px;
+}
+
+.dialog-box-content p.no-data {
+    text-align: center;
+    color: var(--vision-ui-grey);
+}
+
+.dialog-box-content p.headline-stat {
+    text-align: center;
+    font-size: 2rem;
+    color: var(--vision-ui-blue);
+}
+
+.dialog-box-content > *:not(section):not(h3), .dialog-box-content > section > *:not(h3) {
+    margin: 10px 0px;
+}
+
+.dialog-box-content h3 {
+    text-align: center;
+}
+
+.dialog-box-content table {
+    width: 100%;
+}
+
+/*
+    Overrides for nice-select
+*/
+
+/*.dialog-box-main .nice-select {
+    width: 100%;
+}
+
+    .dialog-box-main .nice-select .list,
+    .dialog-box-main .nice-select .list .option {
+        margin: 0;
+    }*/
+
+/* End overrides*/
+
+/* A simple container class for storing hidden dialog content. */
+.dialog-content-collection {
+    display: none;
+}
+
+
+
+/*
+    Syles for message overlays
+*/
+.message-overlay {
+    position: absolute;
+    top: inherit;
+    left: inherit;
+    /*
+        Both height and width should be overridden by specific styles
+        when the message-overlay is used within a container which
+        does not specify a height and width property value.
+        The container should also have the position: relative style.
+    */
+    height: inherit;
+    width: inherit;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255,255,255,0.5);
+}
+
+.message-overlay > .message-container {
+    width: inherit;
+    /*height: 100px;*/
+    background-color: var(--vision-ui-orange);
+    color: white;
+    text-align: center;
+}
+
+.message-overlay > .message-container > p {
+    margin: 10px 0px;
+}
+/*
+    End styles for message overlays
+*/
+
+
+
+/*
+    Tooltip Styles
+*/
+    .tip-texts {
+    display: none;
+}
+
+/* The content box. */
+.tooltipster-content {
+    /* Apply a padding to all content. !important is required to overwrite all defaults. */
+    padding: 1rem !important;
+}
+
+/* Apply a margin to all content which is not first or last in the DOM. */
+.tooltipster-content *:not(:first-child):not(:last-child) {
+    margin: 0.5rem 0;
+}
+/* Apply a margin to all content which is not first, but is last. This ensures a margin when there are only two items. */
+.tooltipster-content *:not(:first-child):last-child {
+    margin-top: 0.5rem;
+}
+
+.tooltipster-content h3 {
+      margin: 0;
+      padding: 10px 0;
+    border-bottom: 1px solid #fff;
+    /*line-height: 30px;*/
+    /*font-size: 16px;*/
+} .tooltipster-content p {
+/*      margin: 10px 0;*/
+    /*margin-top: 5px;*/
+    /*line-height: 20px;*/
+}
+
+  .tooltipster-content ul {
+/*      margin: 10px 0;*/
+  }
+.tooltipster-content li {
+/*    margin: 0 10px;*/
+}
+.tooltipster-sidetip.tooltipster-punk .tooltipster-box {
+    margin: 5px;
+    border-radius: 5px;
+    border: none;
+    border-bottom: 3px solid #fff;
+    background-color: var(--vision-ui-red);
+    box-shadow: 0 0 10px 6px var(--vision-ui-boxshadow-colour);
+}
+.tooltipster-sidetip.tooltipster-punk-smallbtn .tooltipster-box {
+    margin: 5px;
+    border-bottom: 0px;
+    background-color: var(--vision-ui-dark-grey);
+    box-shadow: 0 0 10px 6px var(--vision-ui-boxshadow-colour);/* rgba(0,0,0,.25)*/
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-custom .tooltipster-box {
+    background-color: var(--vision-ui-navy);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-smallbtn .tooltipster-box {
+    background-color: var(--vision-ui-dark-grey);
+} .tooltipster-sidetip.tooltipster-punk.tooltipster-top .tooltipster-box {
+    margin-bottom: 7px
+} .tooltipster-sidetip.tooltipster-punk .tooltipster-content {
+    color: #fff;
+} .tooltipster-sidetip.tooltipster-punk .tooltipster-arrow-background {
+    display: none;
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-bottom .tooltipster-arrow-border {
+    border-bottom-color: var(--vision-ui-atlas-red);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-left .tooltipster-arrow-border {
+    border-left-color: var(--vision-ui-atlas-red);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-right .tooltipster-arrow-border {
+    border-right-color: var(--vision-ui-atlas-red);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-top .tooltipster-arrow-border {
+    border-top-color: var(--vision-ui-atlas-red);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-custom.tooltipster-bottom .tooltipster-arrow-border {
+    border-bottom-color: var(--vision-ui-navy);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-custom.tooltipster-left .tooltipster-arrow-border {
+    border-left-color: var(--vision-ui-navy);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-custom.tooltipster-right .tooltipster-arrow-border {
+    border-right-color: var(--vision-ui-navy);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-custom.tooltipster-top .tooltipster-arrow-border {
+    border-top-color: var(--vision-ui-navy);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-smallbtn.tooltipster-bottom .tooltipster-arrow-border {
+    border-bottom-color: var(--vision-ui-dark-grey);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-smallbtn.tooltipster-left .tooltipster-arrow-border {
+    border-left-color: var(--vision-ui-dark-grey);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-smallbtn.tooltipster-right .tooltipster-arrow-border {
+    border-right-color: var(--vision-ui-dark-grey);
+}
+.tooltipster-sidetip.tooltipster-punk.tooltipster-punk-smallbtn.tooltipster-top .tooltipster-arrow-border {
+    border-top-color: var(--vision-ui-dark-grey);
+}
+
+.no-select {
+    -webkit-user-select: none; 
+    -moz-user-select: none; 
+    -ms-user-select: none; 
+}
+
+
+#top-bar {
+    display: flex;
+    top: 0;
+    width: auto;
+    height: 59px;
+    background-size: auto 50%;
+}
+
+        #top-bar > div.left,
+        #top-bar > div.right {
+            display: flex;
+        }
+
+    #top-bar > div.right {
+        margin-left: auto;
+    }
+
+    #top-bar .top-bar-item {
+        height: 50px;
+        width: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        #top-bar .top-bar-item > img {
+            width: 45%;
+            height: 45%;
+            margin: 25%;
+        }
+
+        #top-bar .top-bar-item.notify:not(:hover) {
+            background-color: var(--vision-ui-red);
+            animation: red-pulse 2s infinite;
+        }
+
+        #top-bar .top-bar-item.toggled,
+        #top-bar .top-bar-item:hover {
+            background-color: var(--vision-ui-red);
+        }
+
+.status-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 99000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.status-box {
+    max-height: 60%;
+    max-width: 80%;
+    background-color: white;
+    box-shadow: 0px 0px 10px 2px rgba(255,255,255,0.6);
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    text-align: center;
+    transition: all 0.25s;
+}
+
+    .status-box.ok {
+        background-color: #27AE60;
+        color: white;
+    }
+
+    .status-box.warning {
+        background-color: #E67E22;
+        color: white;
+    }
+
+    .status-box.error {
+        background-color: #E74C3C;
+        color: white;
+    }
+
+    .status-box > header,
+    .status-box > footer {
+        display: flex;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .status-box > .body {
+        display: flex;
+        justify-content: center;
+        padding: 2rem 3rem;
+        flex-direction: column;
+    }
+
+    .status-box > .body > * {
+        display: block;
+    }
+
+    .status-box > footer {
+        cursor: pointer;
+    }
