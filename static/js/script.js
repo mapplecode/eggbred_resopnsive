@@ -1,4 +1,4 @@
-let isMapLoaded = false
+let isMapLoaded = false;
 let map;
 let featureLayer;
 let showPostalCodes = true; 
@@ -83,6 +83,7 @@ let currentMarker = null;
 let currentMarkerSearch = null;
 let originalRadius = null;
 let hasUnsavedChanges = false;
+let isCircleSaved = false;
 
 function loadSavedRegions() {
     if (isAreaDevClicked) { 
@@ -96,6 +97,7 @@ function loadSavedRegions() {
                         const savedGroups = response.regionGroups || [];
                         selectedRegions.clear();
                         selectedRegionGroups.clear();
+                        
                         savedRegions.forEach(region => {
                             selectedRegions.set(region.placeId, {
                                 ...region,
@@ -116,8 +118,12 @@ function loadSavedRegions() {
                                 type: 'areaDev'
                             });
                         });
+
                         currentGroupId = Math.max(...selectedRegionGroups.keys(), 0) + 1;
                         updateAreaDevLabels();
+
+                        // ✅ Force Redraw to Show Polygons
+                        refreshFeatureLayer(); 
                     }
                 },
                 error: function(xhr, status, error) {
@@ -126,7 +132,54 @@ function loadSavedRegions() {
             });
         }
     }
+    if (isRecruitmentClicked) {
+        $.ajax({
+            url: "/load_regions_recruitment",
+            method: "GET",
+            success: function(response) {
+                if (response.status === 'success') {
+                    const savedRegions = response.regions || [];
+                    const savedGroups = response.regionGroups || [];
+                    selectedRegionsRecruitment.clear();
+                    selectedRegionGroupsRecruitment.clear();
+                    savedRegions.forEach(region => {
+                        selectedRegionsRecruitment.set(region.placeId, {
+                            ...region,
+                            displayName: region.displayName || `Feature ${region.placeId}`,
+                            type: 'recruitment'
+                        });
+                    });
+                    savedGroups.forEach(group => {
+                        const groupRegions = savedRegions.filter(region => region.groupId === group.id);
+                        const demographics = typeof group.demographics === "string"
+                            ? JSON.parse(group.demographics)
+                            : group.demographics;
+                        selectedRegionGroupsRecruitment.set(group.id, {
+                            ...group,
+                            regions: groupRegions.map(region => region.placeId),
+                            demographicsRec: demographics,
+                            type: 'recruitment'
+                        });
+                    });
+                    currentGroupIdRecruitment = Math.max(...selectedRegionGroupsRecruitment.keys(), 0) + 1;
+                    updateRecruitmentLabels();
+		            refreshFeatureLayer();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching recruitment regions:", error);
+            }
+        });
+    }
 }
+function refreshFeatureLayer() {
+    if (featureLayer) {
+        featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+        google.maps.event.trigger(map, "idle");
+    }
+}
+
+
 async function loadSavedCircles() {
     try {
         const response = await fetch('/get_all_circles');
@@ -170,11 +223,11 @@ async function loadSavedCircles() {
                     activeCircle = circle;
                     activeCircleId = id;
                     showInputPanel();
-                    // document.getElementById("submit-btn-radial").style.display = "none";
+                    document.getElementById("submit-btn-radial").style.display = "none";
                     populateTableForCircle(id);
                 });
             });
-            setupMapClickListener();
+            // setupMapClickListener();
         } else {
             console.error('Error fetching circles from server:', result.message);
         }
@@ -279,7 +332,7 @@ function handleMouseMove(e) {
 // Init function to load map on page load for area development and recruitment analysis
 async function initNormalMap() {
     const { Map } = await google.maps.importLibrary("maps");
-    map = new Map(document.getElementById("map"), {
+    map = new Map(document.getElementById("map-container"), {
         center: { lat: 39.0928, lng: -95.8143 },
         zoom: 6,
         mapTypeControl: false,
@@ -296,10 +349,23 @@ async function initNormalMap() {
     featureLayer = map.getFeatureLayer("POSTAL_CODE");
     featureLayer.style = createApplyStyle(styleDefaultNormalmap);
     featureLayer.addListener("click", handleClick);
+
+    document.getElementById("editAreaBoundry").addEventListener("click", function() {
+        initCustomMap();
+        handleEditArea();
+    });
+    document.getElementById("editAreaBoundryRecruitment").addEventListener("click", function() {
+        initCustomMap();
+        handleEditAreaRecruitment();
+    });
+    handleDelete();
+    handleDeleteRecruitment();
+    initializeEventListeners();
     addControlListeners();
     if (isMapLoaded) {
         updateLabels();
     }
+    alert("Map loaded successfully");
     // Check and handle the flags
     if (localStorage.getItem('loadSavedRegionsFlag') === 'true') {
         loadSavedRegions();
@@ -308,6 +374,11 @@ async function initNormalMap() {
         isAreaDevClicked = true;  
         loadSavedRegions();
         localStorage.setItem('isAreaDevClicked', 'false');  
+    }
+    if (localStorage.getItem('isRecruitmentClicked') === 'true') {
+        isRecruitmentClicked = true;  
+        loadSavedRegions();
+        localStorage.setItem('isRecruitmentClicked', 'false'); 
     }
     if (localStorage.getItem('leftPanelActive') === 'true') {
         $('#leftPanel').addClass('active');
@@ -334,7 +405,7 @@ async function customMapStyling() {
     currentZoom = currentZoom || 15;
     
     const { Map } = await google.maps.importLibrary("maps");
-    map = new Map(document.getElementById("map"), {
+    map = new Map(document.getElementById("map-container"), {
         center: currentCenter,
         zoom: currentZoom,
         mapId: "ade4782d096b4576",
@@ -368,7 +439,7 @@ async function customMapStylingRecruit() {
     currentZoom = currentZoom || 15;
     
     const { Map } = await google.maps.importLibrary("maps");
-    map = new Map(document.getElementById("map"), {
+    map = new Map(document.getElementById("map-container"), {
         center: currentCenter,
         zoom: currentZoom,
         mapId: "ade4782d096b4576",
@@ -407,7 +478,7 @@ function customMapEventsFranchise() {
         handleSubmit();
         hide_demographic_table();
     });
-    document.getElementById("DeleteLayerButtonFranchise").addEventListener("click", handleDelete);
+    document.getElementById("DeleteLayerButton").addEventListener("click", handleDelete);
     document.getElementById("createNewAreaBtn").addEventListener("click", function() {
         initCustomMap();
         var table = document.getElementById('demographic-table');
@@ -448,7 +519,7 @@ function CustomMapEventRecruitment() {
         handleSubmitRecruitment();
         hide_demographic_table_Recruitment();
     });
-    document.getElementById("DeleteLayerButtonRecruitment").addEventListener("click", handleDeleteRecruitment);
+    
     document.getElementById("save-btn-recruitment").addEventListener("click", handleSave);
     document.getElementById("createNewAreaBtnRecruitment").addEventListener("click", function() {
         initCustomMap();
@@ -546,6 +617,7 @@ function clearMapRegionsRecruitment() {
 //  DOM function to handle all the buttons( Area developemnt, radial analysis and recruitment analysis) event listners.
 function addControlListeners() {
     document.addEventListener('DOMContentLoaded', function() {
+        alert("Control listeners loaded successfully");
         const searchModal = document.getElementById('searchModal');
         const searchIcon = document.getElementById('mnu-search');
         const closeModal = document.getElementById('closeModal');
@@ -616,7 +688,10 @@ function addControlListeners() {
         const returnToMapFromTableRecruitment = document.getElementById("returnToMapFromTableRecruitment");
 
         const colorOptions = document.querySelectorAll('.color-option');
-
+        document.getElementById("DeleteLayerButtonRecruitment").addEventListener("click", function(){
+            $('#delet-area').modal('show');
+            handleDeleteRecruitment();
+        });
         colorOptions.forEach(option => {
         option.addEventListener('click', function () {
             colorOptions.forEach(opt => opt.classList.remove('active'));
@@ -631,7 +706,7 @@ function addControlListeners() {
         if (returnToMapFromTable) {
             returnToMapFromTable.addEventListener("click", function() {
                 document.getElementById("tableView").style.display = "none";
-                document.getElementById("map").style.display = "block";
+                document.getElementById("map-container").style.display = "block";
             });
         }
         function setupPlacesAutocomplete() {
@@ -717,6 +792,7 @@ function addControlListeners() {
         }
         if (franchiseTerritoriesBtn) {
             franchiseTerritoriesBtn.addEventListener('click', async function() {
+                console.log("clicked franchiseTerritoriesBtn");
                 if (franchiseControls) {
                     isAreaDevClicked = !isAreaDevClicked;
                     franchiseControls.style.display = isAreaDevClicked ? 'flex' : 'none';
@@ -776,6 +852,21 @@ function addControlListeners() {
                 
             });
         }
+        if (createNewAreaBtn) {
+            createNewAreaBtn.addEventListener('click', function() {
+                initCustomMap();
+            });
+        }
+        if (dragBtn) {
+            dragBtn.addEventListener('dragstart', function(e) {
+                e.target.style.opacity = '0.4';
+                e.dataTransfer.setData('text/plain', e.target.id);
+            });
+
+            dragBtn.addEventListener('dragend', function(e) {
+                e.target.style.opacity = '1';
+            });
+        }
         if (layerInformationBtn) {
             layerInformationBtn.addEventListener('click', function() {
                 franchiseView.style.display = 'none';
@@ -804,8 +895,39 @@ function addControlListeners() {
                 }
             });
         }
-        //////////////////////////////////////////////////////////////////////////////////////////////////
+        if (saveBackBtn) {
+            saveBackBtn.addEventListener("click", function() {
+                DemographicTable.style.display = "block";
+                inputBtn.style.display = "none";
+            })
+        }
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.layer-btn:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
 
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        if (DeleteLayerButtonRadial) {
+            DeleteLayerButtonRadial.addEventListener("click", function(){
+                $('#delet-area').modal('show');
+                handleDeleteRadial();
+            })
+        }
+        if (editAreaBoundryRadial) {
+            editAreaBoundryRadial.addEventListener("click", function() {
+                editradialnumber.style.display = "block";
+
+                RadialViewRight.style.display = "none";
+            })
+        }
         if (backFromEditRadial) {
             backFromEditRadial.addEventListener("click", function() {
                 editradialnumber.style.display = "none";
@@ -834,6 +956,13 @@ function addControlListeners() {
                 layerInfoViewRadial.style.display = 'none';
                 radialview.style.display = 'block';
             });
+        }
+        if (SaveBackBtnRadial) {
+            SaveBackBtnRadial.addEventListener("click", function() {
+                demographicTableRadial.style.display = "block";
+                inputBtnRadial.style.display = "none";
+
+            })
         }
         if (hideColorsBtn) {
             hideColorsBtn.addEventListener('click', () => toggleClassificationColorsRadial(hideColorsBtn));
@@ -864,7 +993,7 @@ function addControlListeners() {
                 radialControls.style.display = 'none';
                 clearMapCircles();
                 DemographicTable.style.display = "none";
-                // DemographicTableRecruitment.style.display = "none";
+                DemographicTableRecruitment.style.display = "none";
                 demographicTableRadial.style.display = "none";
             });
         }
@@ -873,6 +1002,46 @@ function addControlListeners() {
                 heatmapviewRadial.style.display = "none";
                 radialview.style.display = "block";
             })
+        }
+        if (createNewAreaBtnRadial) {
+            createNewAreaBtnRadial.addEventListener('click', function() {;
+                radialview.style.display = "none";
+                AddressInput.style.display = "block";
+                setupAutocompleteTrigger(input);
+                resetDemographicTable();
+                demographicTableRadial.style.display = "block";
+            });
+        }
+        if (submit_btnRadial) {
+            submit_btnRadial.addEventListener('click', function() {
+                inputBtnRadial.style.display = "block";
+                demographicTableRadial.style.display = "none";
+                document.getElementById("autocomplete").value = '';
+            })
+        }
+        if (SubmitButtonAutoComplete) {
+            SubmitButtonAutoComplete.addEventListener("click", function() {
+                resetDemographicsTable();
+                createCircleAtSelectedLocation();
+                document.getElementById("submit-btn-radial").style.display = "block";
+                // setupMapClickListener();
+            })
+        }
+        if (input_back_btn) {
+            input_back_btn.addEventListener('click', function() {
+                AddressInput.style.display = "none";
+                radialview.style.display = "block";
+            })
+        }
+        if (dragBtn) {
+            dragBtn.addEventListener('dragstart', function(e) {
+                e.target.style.opacity = '0.4';
+                e.dataTransfer.setData('text/plain', e.target.id);
+            });
+
+            dragBtn.addEventListener('dragend', function(e) {
+                e.target.style.opacity = '1';
+            });
         }
         if (layerInformationBtnRadial) {
             layerInformationBtnRadial.addEventListener('click', function() {
@@ -888,13 +1057,175 @@ function addControlListeners() {
                 RadialViewRight.style.display = "none";
             });
         }
+        if (radiusInput) {
+            radiusInput.addEventListener('input', handleDynamicRadiusChange);
+        }
+        if (saveBtnForRadius) {
+            saveBtnForRadius.addEventListener("click", async () => {
+                const radiusInput = document.getElementById('typeNumber');
+                const newRadiusInMiles = parseFloat(radiusInput.value);
+                if (isNaN(newRadiusInMiles) || newRadiusInMiles < 1) {
+                    alert("Please enter a valid radius (minimum 1 mile)");
+                    return;
+                }
+                const newRadiusInMeters = newRadiusInMiles * 1609.34;
+                await handleRadiusChange(newRadiusInMeters);
+                originalRadius = null;
+                hasUnsavedChanges = false;
+                updateSaveButtonState();
+                document.getElementById("editradialnumber").style.display = "none";
+            });
+        }
+        if (SaveBackBtnRecruitment) {
+            SaveBackBtnRecruitment.addEventListener("click", function() {
+                DemographicTableRecruitment.style.display = "block";
+                inputBtnRecruitment.style.display = "none";
+            })
+        }
+        if (returnToMapRecruitmentFromTableRecruitment) {
+            returnToMapRecruitmentFromTableRecruitment.addEventListener("click", function() {
+                document.getElementById("tableViewRecruitment").style.display = "none";
+                document.getElementById("map-container").style.display = "block";
+            });
+        }
+        if (mapElement) {
+            mapElement.style.display = "block";
+        }
+        if (recruitmentTerritoriesBtn) {
+            recruitmentTerritoriesBtn.addEventListener('click', async function() {
+                if (recruitmentControls) {
+                    isRecruitmentClicked = !isRecruitmentClicked;
+                    recruitmentControls.style.display = isRecruitmentClicked ? 'flex' : 'none';
+                    if (isRecruitmentClicked) {
+                        loadSavedRegions();
+                    } else {
+                        clearMapRegionsRecruitment();
+                        labelsRecruitment.forEach(label => label.setMap(null));
+                        labelsRecruitment = [];
+                        regionPolygons.forEach(polygon => {
+                            if (polygon) polygon.setMap(null);
+                        });
+                        regionPolygons = [];
+                        selectedRegionsRecruitment.clear();
+                        selectedRegionGroupsRecruitment.clear();
+                        // if (!isAreaDevClicked) {
+                            featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+                        // }
+                    }
+                }
+            });
+        }
+        if (toggleLabelsBtnrecruitment) {
+            toggleLabelsBtnrecruitment.addEventListener('click', function() {
+                const isLabelsOn = toggleLabelsBtnrecruitment.textContent.includes('off');
+                toggleLabelsBtnrecruitment.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
+                areRegionsVisibleRecruit = !isLabelsOn;
+                if (areRegionsVisibleRecruit) {
+                    loadSavedRegions();
+                    updateLabels();
+                } else {
+                    labelsRecruitment.forEach(label => label.setMap(null));
+                    labelsRecruitment = [];
+                }
+                map.data.setStyle(applyStyle);
+            });
+        }
+        if (menuBtnrecruitment && defaultView && recruitmentView) {
+            menuBtnrecruitment.addEventListener('click', function() {
+                defaultView.style.display = 'none';
+                recruitmentView.style.display = 'block';
+            });
+        }
+        if (backToLayerControlBtnRecruitment && recruitmentView && defaultView) {
+            backToLayerControlBtnRecruitment.addEventListener('click', function() {
+                isCreatingNewArea = false;
+                isEditingArea = false;
+                isCreatingNewAreaRecruitment = false;
+                isEditingAreaRecruit = false;
+                recruitmentView.style.display = 'none';
+                defaultView.style.display = 'block';
+                recruitmentControls.style.display = 'none';
+                clearMapRegionsRecruitment();
+                labelsRecruitment.forEach(label => label.setMap(null));
+                labelsRecruitment = [];
+                removePostalCodes();
+                DemographicTable.style.display = "none";
+                DemographicTableRecruitment.style.display = "none";
+                DeleteLayerButtonRadial.style.display = "none";
+            });
+        }
+        if (createNewAreaBtnRecruitment) {
+            createNewAreaBtnRecruitment.addEventListener('click', function() {
+                initCustomMap();
+            });
+        }
+        if (dragBtnrecruitment) {
+            dragBtnrecruitment.addEventListener('dragstart', function(e) {
+                e.target.style.opacity = '0.4';
+                e.dataTransfer.setData('text/plain', e.target.id);
+            });
+
+            dragBtnrecruitment.addEventListener('dragend', function(e) {
+                e.target.style.opacity = '1';
+            });
+        }
+        if (layerInformationBtnRecruitment) {
+            layerInformationBtnRecruitment.addEventListener('click', function() {
+                recruitmentView.style.display = 'none';
+                layerInfoViewRecruitment.style.display = 'block';
+                renderPieChartRecruitment();
+            });
+        }
+        if (backToViewBtnRecruitment) {
+            backToViewBtnRecruitment.addEventListener('click', function() {
+                layerInfoViewRecruitment.style.display = 'none';
+                recruitmentView.style.display = 'block';
+            });
+        }
+        if (returnToMapFromTableRecruitment) {
+            returnToMapFromTableRecruitment.addEventListener("click", function() {
+                document.getElementById("tableViewRecruitment").style.display = "none";
+                document.getElementById("map-container").style.display = "block";
+            });
+        }
+        // const layerButtons = document.querySelector('.layer-buttons');
+        if (layerButtons) {
+            layerButtons.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const draggable = document.querySelector('.dragging');
+                if (draggable) {
+                    const afterElement = getDragAfterElementRecruitment(layerButtons, e.clientY);
+                    if (afterElement) {
+                        layerButtons.insertBefore(draggable, afterElement);
+                    } else {
+                        layerButtons.appendChild(draggable);
+                    }
+                }
+            });
+        }
+        function getDragAfterElementRecruitment(container, y) {
+            const draggableElements = [...container.querySelectorAll('.layer-btn:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
     });
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    initializeColorOptions();
     initializeEventListeners();
+    initializeCreateNewAreaButtons();
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table view" || button.textContent === "Demographic report") {
           button.addEventListener("click", function() {
-            document.getElementById("map").style.display = "none";
+            document.getElementById("map-container").style.display = "none";
             document.getElementById("tableView").style.display = "block";
             populateTable();
           });
@@ -913,14 +1244,14 @@ function addControlListeners() {
             });
         }
     });
-    document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        const prefix = document.getElementById('prefixInput').value;
-        $('#editLabelModal').modal('hide');
-    });
+    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+    //     const prefix = document.getElementById('prefixInput').value;
+    //     $('#editLabelModal').modal('hide');
+    // });
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table View " || button.textContent === "Demographic Report") {
           button.addEventListener("click", function() {
-            document.getElementById("map").style.display = "none";
+            document.getElementById("map-container").style.display = "none";
             document.getElementById("tableViewRecruitment").style.display = "block";
             populateTableRecruitment();
           });
@@ -928,17 +1259,18 @@ function addControlListeners() {
     });
     document.getElementById("exportToCSVRecruitment").addEventListener("click", exportToCSVRecruitment);
     document.getElementById("DownloadDemographicbreakdownRecruitment").addEventListener("click", exportToCSVRecruitment);
-    document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        const prefixRecruitment = document.getElementById('prefixInput').value;
-        $('#editLabelModal').modal('hide');
-    });
+    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+    //     const prefixRecruitment = document.getElementById('prefixInput').value;
+    //     $('#editLabelModal').modal('hide');
+    // });
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    initializeColorOptionsRadial();
     initializeEventListenersRadial();
     document.getElementById("DeleteLayerButtonRadial").addEventListener("click", handleDeleteRadial);
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table View" || button.textContent === "Demographic report ") {
           button.addEventListener("click", function() {
-            document.getElementById("map").style.display = "none";
+            document.getElementById("map-container").style.display = "none";
             document.getElementById("tableViewRadial").style.display = "block";
             populateCircleTable();
           });
@@ -946,10 +1278,11 @@ function addControlListeners() {
     });
     document.getElementById("exportToCSVRadial").addEventListener("click", exportToCSVRadial);
     document.getElementById("returnToMapFromTableRadial").addEventListener("click", returnToMapRadial);
-    document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        const prefixRadial = document.getElementById('prefixInput').value;
-        $('#editLabelModal').modal('hide');
-    });
+    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+    //     const prefixRadial = document.getElementById('prefixInput').value;
+    //     $('#editLabelModal').modal('hide');
+    // });
+    actionBtnRadial();
     closeBtnRadial();
 
 }
@@ -1096,7 +1429,7 @@ function exportToCSV() {
 }
 function returnToMap() {
     document.getElementById("tableView").style.display = "none";
-    document.getElementById("map").style.display = "block";
+    document.getElementById("map-container").style.display = "block";
 }
 function initializeColorOptions() {
     if (isAreaDevClicked) {
@@ -1263,6 +1596,7 @@ function removePostalCodes() {
 }
 function handleSubmit() {
     newSelectedRegions = Array.from(selectedRegions.values()).filter(region => region.groupId === null);
+    console.log("Selected regions:", newSelectedRegions.length);
     if (newSelectedRegions.length > 0) {
         document.getElementById("input-area").style.display = "block";
         document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
@@ -1443,8 +1777,7 @@ function handleAreaDevSave() {
                 selectedRegionGroups: selectedRegionGroupsArray
             }),
             success: function(response) {
-                if (response.success) {
-                    console.log('Success');
+                if (response.status === 'success') {
                     finishSave();
                 } else {
                     console.error('Server error:', response);
@@ -1593,8 +1926,8 @@ function handleRecruitmentSave() {
                 selectedRegionGroupsRecruitment: selectedRegionGroupsArrayRec 
             }),
             success: function(response) {
+                
                 if (response.success) {
-                    console.log('Success');
                     finishSave();
                 } else {
                     console.log('Server response:', response);
@@ -1708,7 +2041,7 @@ function addNewRegion(feature, latLng) {
                     selectedRegionsDemographics.set(placeId, response.data);
                     updateAccumulatedDemographics();
                     document.getElementById('demographic-table').style.display = 'block';
-                    // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment').style.display = 'none';
                     document.getElementById('demographic-table-radial').style.display = 'none';
                 } else {
                     console.log("Could not find data for ZIP code: " + postalCode);
@@ -1749,7 +2082,7 @@ async function addNewRegionForEdit(feature, latLng) {
                 selectedRegionsDemographics.set(placeId, response.data);
                 updateAccumulatedDemographics();
                 document.getElementById('demographic-table').style.display = 'block';
-                // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                document.getElementById('demographic-table-recruitment').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
                 const newRegion = {
                     displayName: displayName,
@@ -1790,7 +2123,7 @@ function cancelSelection() {
     if (selectedRegionsDemographics.size > 0) {
         updateAccumulatedDemographics();
         document.getElementById('demographic-table').style.display = 'block';
-        // document.getElementById('demographic-table-recruitment').style.display = 'none';
+        document.getElementById('demographic-table-recruitment').style.display = 'none';
         document.getElementById('demographic-table-radial').style.display = 'none';
     } else {
         resetDemographicsTable();
@@ -1831,7 +2164,7 @@ function handleAreaDevClick(e) {
             if (selectedRegionsDemographics.size > 0) {
                 updateAccumulatedDemographics();
                 document.getElementById('demographic-table').style.display = 'block';
-                // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                document.getElementById('demographic-table-recruitment').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
             } else {
                 resetDemographicsTable();
@@ -1852,7 +2185,7 @@ function handleAreaDevClick(e) {
                 if (selectedRegionsDemographics.size > 0) {
                     updateAccumulatedDemographics();
                     document.getElementById('demographic-table').style.display = 'block';
-                    // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment').style.display = 'none';
                     document.getElementById('demographic-table-radial').style.display = 'none';
                 } else {
                     resetDemographicsTable();
@@ -1869,7 +2202,7 @@ function handleAreaDevClick(e) {
                         selectedGroupForDeletion = groupIdarea;
                         displayGroupDemographics(grouparea.demographics);
                         document.getElementById('demographic-table').style.display = 'block';
-                        // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                        document.getElementById('demographic-table-recruitment').style.display = 'none';
                         document.getElementById('demographic-table-radial').style.display = 'none';
                         document.getElementById('ActionBtn').style.display = "block";
                         document.getElementById('CloseBtn').style.display = "block";
@@ -1915,12 +2248,12 @@ function handleRecruitmentClick(e) {
             }
             if (selectedRegionsRecruitmentDemographics.size > 0) {
                 updateAccumulatedDemographicsRecruitment();
-                // document.getElementById('demographic-table-recruitment').style.display = 'block';
+                document.getElementById('demographic-table-recruitment').style.display = 'block';
                 document.getElementById('demographic-table').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
             } else {
                 resetDemographicsTableRecruitment();
-                // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                document.getElementById('demographic-table-recruitment').style.display = 'none';
             }
             featureLayer.style = (feature) => applyStyle(feature);
             updateLabels();
@@ -1937,12 +2270,12 @@ function handleRecruitmentClick(e) {
 
                 if (selectedRegionsRecruitmentDemographics.size > 0) {
                     updateAccumulatedDemographicsRecruitment();
-                    // document.getElementById('demographic-table-recruitment').style.display = 'block';
+                    document.getElementById('demographic-table-recruitment').style.display = 'block';
                     document.getElementById('demographic-table').style.display = 'none';
                         document.getElementById('demographic-table-radial').style.display = 'none';
                 } else {
                     resetDemographicsTableRecruitment();
-                    // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment').style.display = 'none';
                 }
             } else {
                 const groupIdRecruit = clickedRegionRecruit.groupId;
@@ -1951,11 +2284,11 @@ function handleRecruitmentClick(e) {
                 if (groupRec) {
                     if (selectedGroupForDeletionRecruitment === groupIdRecruit) {
                         selectedGroupForDeletionRecruitment = null;
-                        // document.getElementById('demographic-table-recruitment').style.display = 'none';
+                        document.getElementById('demographic-table-recruitment').style.display = 'none';
                     } else {
                         selectedGroupForDeletionRecruitment = groupIdRecruit;
                         displayGroupDemographicsRecruitment(groupRec.demographicsRec);
-                        // document.getElementById('demographic-table-recruitment').style.display = 'block';
+                        document.getElementById('demographic-table-recruitment').style.display = 'block';
                         document.getElementById('demographic-table').style.display = 'none';
                         document.getElementById('demographic-table-radial').style.display = 'none';
                         document.getElementById('ActionBtnRecruitment').style.display = "block";
@@ -2004,7 +2337,7 @@ function handleBothClicks(e) {
         if (selectedGroupForDeletionRecruitment) {
             resetGroupHighlight(selectedGroupForDeletionRecruitment);
             selectedGroupForDeletionRecruitment = null;
-            // document.getElementById('demographic-table-recruitment').style.display = 'none';
+            document.getElementById('demographic-table-recruitment').style.display = 'none';
             document.getElementById('ActionBtnRecruitment').style.display = "none";
             document.getElementById('CloseBtnRecruitment').style.display = "none";
         }
@@ -2196,15 +2529,15 @@ function handleCreateNewAreaRecruitmentClick(clickedFeature, placeId, latLng) {
         
         if (selectedRegionsRecruitmentDemographics.size > 0) {
             updateAccumulatedDemographicsRecruitment();
-            // document.getElementById('demographic-table-recruitment').style.display = 'block';
+            document.getElementById('demographic-table-recruitment').style.display = 'block';
         } else {
             resetDemographicsTableRecruitment();
-            // document.getElementById('demographic-table-recruitment').style.display = 'none';
+            document.getElementById('demographic-table-recruitment').style.display = 'none';
         }
     } else if (!existingRegionRecruit) {
         addNewRegionRecruitment(clickedFeature, latLng);
         updateAccumulatedDemographicsRecruitment();
-        // document.getElementById('demographic-table-recruitment').style.display = 'block';
+        document.getElementById('demographic-table-recruitment').style.display = 'block';
     }
     lastInteractedFeatureIds = [];
     featureLayer.style = createNewAreaStyle;
@@ -2228,7 +2561,7 @@ function cancelRecruitmentSelection() {
     });
     
     // Check if the zip codes input for recruitment exists before trying to clear it
-    const zipCodesRecruitment = document.getElementById('zip-codes-recruitment');
+    const zipCodesRecruitment = document.getElementById('zipCodesRecruitment');
     if (zipCodesRecruitment) {
         zipCodesRecruitment.value = '';
     }
@@ -2236,10 +2569,10 @@ function cancelRecruitmentSelection() {
     // Reset demographics if needed
     if (selectedRegionsRecruitmentDemographics.size > 0) {
         updateAccumulatedDemographicsRecruitment();
-        // document.getElementById('demographic-table-recruitment').style.display = 'block';
+        document.getElementById('demographic-table-recruitment').style.display = 'block';
     } else {
         resetDemographicsTableRecruitment();
-        // document.getElementById('demographic-table-recruitment').style.display = 'none';
+        document.getElementById('demographic-table-recruitment').style.display = 'none';
     }
     
     // Update the map styling
@@ -2378,6 +2711,7 @@ function highlightSelectedGroup() {
     updateLabels();
 }
 function handleDelete() {
+    if (document.getElementById("confirmDeleteButton")) {
     document.getElementById("confirmDeleteButton").addEventListener("click", () => {
         if (selectedGroupForDeletion !== null) {
             const groupToDelete = selectedRegionGroups.get(selectedGroupForDeletion);
@@ -2414,10 +2748,12 @@ function handleDelete() {
         $('#delet-area').modal('hide');
     });
 }
+}
 function initializeEventListeners() {
-    setupMapClickListener();
+    // setupMapClickListener();
     if (isAreaDevClicked) {
-        document.getElementById("DeleteLayerButtonFranchise").addEventListener("click", () => {
+        document.getElementById("DeleteLayerButton").addEventListener("click", () => {
+            console.log("selectedGroupForDeletion", selectedGroupForDeletion);
             if (selectedGroupForDeletion !== null) {
                 $('#delet-area').modal('show');
                 handleDelete();
@@ -2435,11 +2771,11 @@ function initializeEventListeners() {
             }
         });
         document.getElementById("editAreaBoundry")?.addEventListener("click", handleEditArea);
-        document.getElementById('saveLabelChanges').addEventListener('click', function() {
-            prefix = document.getElementById('prefixInput').value.trim();
-            $('#editLabelModal').modal('hide');
-            updateLabels();
-        });
+        // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+        //     prefix = document.getElementById('prefixInput').value.trim();
+        //     $('#editLabelModal').modal('hide');
+        //     updateLabels();
+        // });
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
             let rgbValues;
@@ -2458,7 +2794,63 @@ function initializeEventListeners() {
             });
         });
     }
-    
+    if (isRecruitmentClicked) {
+        document.getElementById("DeleteLayerButtonRecruitment").addEventListener("click", () => {
+            console.log("selectedGroupForDeletion Recruitment", selectedGroupForDeletionRecruitment);
+            if (selectedGroupForDeletionRecruitment !== null) {
+                $('#delet-area').modal('show');
+            } else {
+                console.log("No group selected for deletion. Please click on a named region before deleting.");
+            }
+        });
+        document.getElementById("cancel-btn-rec").addEventListener("click", cancelRecruitmentSelection);
+        document.getElementById("save-btn-recruitment")?.addEventListener("click", handleSave);
+        document.querySelectorAll('.action-btn').forEach(button => {
+            if (button.textContent.trim() === 'Edit label content') {
+                button.addEventListener('click', () => {
+                    $('#editLabelModal').modal('show');
+                });
+            }
+        });
+        document.getElementById("editAreaBoundryRecruitment")?.addEventListener("click", handleEditAreaRecruitment);
+        // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+        //     prefixRecruitment = document.getElementById('prefixInput').value.trim();
+        //     $('#editLabelModal').modal('hide');
+        //     updateLabels();
+        // });
+        document.querySelectorAll('.color-option').forEach(option => {
+            const color = option.getAttribute('data-color');
+            let rgbValues;
+            if (color === 'white') {
+                rgbValues = '255,255,255';
+            } else {
+                rgbValues = color.match(/\d+,\d+,\d+/)[0];
+            }
+            option.style.setProperty('--hover-color', rgbValues);
+            
+            option.addEventListener('click', (e) => {
+                const colorOption = e.target.closest('.color-option');
+                if (!colorOption) return;
+                
+                document.querySelectorAll('.color-option').forEach(opt =>
+                    opt.classList.remove('selected')
+                );
+                colorOption.classList.add('selected');
+                const categoryText = document.querySelector('input[name="category"]:checked')?.value
+                // Get the category text
+                const selectedClassificationTextRecruitmentValue = colorOption.querySelector('p').textContent;
+                if (categoryText === "Primary Area") {
+                    selectedColorRecruitment = "rgb(255, 255, 153)";
+                } else if (categoryText === "Secondary Area") {
+                    selectedColorRecruitment = "rgb(230, 230, 0)";
+                } else {
+                    selectedColorRecruitment = colorOption.dataset.color;
+                }
+                
+                selectedClassificationTextRecruitment = selectedClassificationTextRecruitmentValue;
+            });
+        });
+    }
 }
 function handleEditArea() {
     const loader = document.getElementById("loader-wrapper");
@@ -2929,7 +3321,7 @@ function initializeCreateNewAreaButtons() {
             isCreatingNewAreaRecruitment = true;
             await initCustomMap();
             
-            // var table = document.getElementById('demographic-table-recruitment');
+            var table = document.getElementById('demographic-table-recruitment');
             if (table.style.display === 'none' || table.style.display === '') {
                 table.style.display = 'block';
                 this.textContent = 'Hide Demographic Data';
@@ -3068,17 +3460,17 @@ function saveRegionsRecruitment() {
 function actionBtnRecruitment() {
     document.getElementById("ActionBtnRecruitment").addEventListener("click", function(){
         document.getElementById("RecruitmentViewRight").style.display = "block";
-        // document.getElementById("demographic-table-recruitment").style.display = "none";
+        document.getElementById("demographic-table-recruitment").style.display = "none";
     })
 }
 function closeBtnRecruitment() {
     document.getElementById("CloseBtnRecruitment").addEventListener("click", function(){
-        // document.getElementById("demographic-table-recruitment").style.display = "none";
+        document.getElementById("demographic-table-recruitment").style.display = "none";
     })
 }
 function GoBackToTableRecruitment() {
     document.getElementById("BackToTableRecruitment").addEventListener("click", function(){
-        // document.getElementById("demographic-table-recruitment").style.display = "block";
+        document.getElementById("demographic-table-recruitment").style.display = "block";
         document.getElementById("RecruitmentViewRight").style.display = "none";
     })
 }
@@ -3274,7 +3666,7 @@ function exportToCSVRecruitment() {
   }
 function returnToMapRecruitment() {
     document.getElementById("tableViewRecruitment").style.display = "none";
-    document.getElementById("map").style.display = "block";
+    document.getElementById("map-container").style.display = "block";
 }
 function load_postal_data_Recruitment(data_list_recruit){
     $.ajax({
@@ -3409,11 +3801,10 @@ function addNewRegionRecruitment(feature, latLng) {
                 if (response.success) {
                     selectedRegionsRecruitmentDemographics.set(placeId, response.data);
                     updateAccumulatedDemographicsRecruitment();
-                    // document.getElementById('demographic-table-recruitment').style.display = 'block';
+                    document.getElementById('demographic-table-recruitment').style.display = 'block';
                     document.getElementById('demographic-table').style.display = 'none';
                     document.getElementById('demographic-table-radial').style.display = 'none';
                 } else {
-                    alert("Could not find data for ZIP code: " + postalCode);
                     console.log("Could not find data for ZIP code: " + postalCode);
                 }
             },
@@ -3451,7 +3842,7 @@ async function addNewRegionForEditRecruitment(feature, latLng) {
             if (response.success) {
                 selectedRegionsRecruitmentDemographics.set(placeId, response.data);
                 updateAccumulatedDemographicsRecruitment();
-                // document.getElementById('demographic-table-recruitment').style.display = 'block';
+                document.getElementById('demographic-table-recruitment').style.display = 'block';
                 document.getElementById('demographic-table').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
                 const newRegionRecruit = {
@@ -3590,7 +3981,7 @@ function handleDeleteRecruitment() {
                             saveRegionsRecruitment();
                             featureLayer.style = applyStyle;
                             updateLabelsRecruitment();
-                            // document.getElementById("demographic-table-recruitment").style.display = "none";
+                            document.getElementById("demographic-table-recruitment").style.display = "none";
                             document.getElementById("RecruitmentViewRight").style.display = "none";
                         } else {
                             console.error(response.message);
@@ -3625,7 +4016,6 @@ function handleEditAreaRecruitment() {
     loader.style.display = "block";
     RecruitmentViewRight.style.display = "none";
     demographicTableRec.style.display = 'none';
-
     if (selectedGroupForDeletionRecruitment === null) {
         loader.style.display = "none";
         alert("Please select an area to edit first");
@@ -3635,24 +4025,34 @@ function handleEditAreaRecruitment() {
     isEditingArea = false;
     editingGroupIdRecruit = selectedGroupForDeletionRecruitment;
     const groupToEdit = selectedRegionGroupsRecruitment.get(editingGroupIdRecruit);
+    console.log("Group to Edit:", groupToEdit);
     newSelectedRegionsRecruitment = [];
     selectedRegionsRecruitmentDemographics.clear();
-
     if (!groupToEdit || !groupToEdit.regions) {
         loader.style.display = "none";
         return;
     }
-
-    // Set initial color based on category
-    if (groupToEdit.category === "Primary Area") {
-        selectedColorRecruitment = "rgb(255, 255, 153)";
-    } else if (groupToEdit.category === "Secondary Area") {
-        selectedColorRecruitment = "rgb(230, 230, 0)";
-    } else {
-        selectedColorRecruitment = groupToEdit.color || 'grey';
+    if (groupToEdit.category) {
+        const radioButton = document.querySelector(`input[name="category"][value="${groupToEdit.category}"]`);
+        console.log("groupToEdit.category:", groupToEdit.category);
+        if (radioButton) {
+            radioButton.checked = true; 
+            if (groupToEdit.category === "Primary Area") {
+                selectedColorRecruitment = "rgb(255, 255, 153)";
+            } else if (groupToEdit.category === "Secondary Area") {
+                selectedColorRecruitment = "rgb(230, 230, 0)";
+            }
+            if (featureLayer) {
+                featureLayer.style = applyStyle;
+            }
+        } else {
+            const defaultRadio = document.querySelector('input[name="category"][value="Primary Area"]');
+            if (defaultRadio) {
+                defaultRadio.checked = true; 
+                selectedColorRecruitment = "rgb(255, 255, 153)";
+            }
+        }
     }
-
-    // Update the color option selection in UI
     document.querySelectorAll('input[name="category"]').forEach(radio => {
         radio.addEventListener('change', function() {
             if (this.value === "Primary Area") {
@@ -3660,19 +4060,15 @@ function handleEditAreaRecruitment() {
             } else if (this.value === "Secondary Area") {
                 selectedColorRecruitment = "rgb(230, 230, 0)";
             }
-            // Update the map style to reflect the new color
             if (featureLayer) {
                 featureLayer.style = applyStyle;
             }
         });
     });
     const uniqueStates = new Set();
-
-    // Rest of the code remains the same...
     const fetchPromises = groupToEdit.regions.map(placeId => {
         const region = selectedRegionsRecruitment.get(placeId);
         if (!region) return Promise.resolve();
-
         const clonedRegion = JSON.parse(JSON.stringify(region));
         newSelectedRegionsRecruitment.push(clonedRegion);
         updateZipCodeInputRecruitment(region.postalCode, 'add');
@@ -3708,12 +4104,11 @@ function handleEditAreaRecruitment() {
                 },
                 error: function(xhr, status, error) {
                     console.error(`Error fetching data for postal code ${region.postalCode}:`, error);
-                    resolve(); // Resolve even on error to continue processing
+                    resolve();
                 }
             });
         });
     });
-
     Promise.all(fetchPromises)
         .then(() => {
             originalRegionsRecruit = [...newSelectedRegionsRecruitment];
@@ -3723,18 +4118,6 @@ function handleEditAreaRecruitment() {
             nameRec.value = groupToEdit.name;
             recruitmentArea.value = groupToEdit.recruitmentArea;
             PotStoreCount.value = groupToEdit.PotStoreCount;
-            if (groupToEdit.category) {
-                const radioButton = document.querySelector(`input[name="category"][value="${groupToEdit.category}"]`);
-                if (radioButton) {
-                    radioButton.checked = true;
-                } else {
-                    // Default to "Primary Area" if no category is set
-                    const defaultRadio = document.querySelector('input[name="category"][value="Primary Area"]');
-                    if (defaultRadio) {
-                        defaultRadio.checked = true;
-                    }
-                }
-            }
             featureLayer.style = applyStyle;
             updateLabels();
             map.data.setStyle({visible: true});
@@ -3783,6 +4166,7 @@ function updateLabelsRecruitment() {
         });
     }
 }
+/////////////////////////////////////////////////////////////////
 function actionBtnRadial() {
     document.getElementById("ActionBtnRadial").addEventListener("click", function(){
         document.getElementById("RadialViewRight").style.display = "block";
@@ -3799,28 +4183,22 @@ function handleDeleteRadial() {
     confirmDeleteButtonRadial.addEventListener("click", () => {
         if (activeCircle) {
             const circleId = activeCircle.id;
-            // Disable the button to prevent multiple clicks
             confirmDeleteButtonRadial.disabled = true;
-            // Make an AJAX call to delete the circle from the database
             $.ajax({
                 url: `/delete_circle/${circleId}`,
                 method: "DELETE",
                 success: function(response) {
                     if (response.status === 'success') {
-                        // Remove the circle from the map
                         activeCircle.setMap(null);
                         activeCircle = null;
                         const circleData = circles.get(circleId);
                         if (circleData && circleData.label) {
                             circleData.label.setMap(null);
                         }
-                        // Remove the circle from the local circles map
                         circles.delete(circleId);
-                        // Close the modal and reset the UI
                         $('#delet-area').modal('hide');
                         document.getElementById("demographic-table-radial").style.display = "none";
                         document.getElementById("RadialViewRight").style.display = "none";
-                        // resetDemographicTable();
                     } else {
                         console.error("Error deleting circle:", response.message);
                     }
@@ -3829,12 +4207,11 @@ function handleDeleteRadial() {
                     console.error("AJAX error while deleting circle:", status, error);
                 },
                 complete: function() {
-                    // Re-enable the button
                     confirmDeleteButtonRadial.disabled = false;
                 }
             });
         } else {
-            alert("No circle selected for deletion.");
+            console.log("No circle selected for deletion.");
         }
     });
 }
@@ -3867,7 +4244,7 @@ function populateTableForCircle(circleId) {
                 selectedCircleId = null;
             } else {
                 table.style.display = "block";
-                // document.getElementById("demographic-table-recruitment").style.display = "none";
+                document.getElementById("demographic-table-recruitment").style.display = "none";
                 document.getElementById("demographic-table").style.display = "none";
                 highlightCircle(circleId);
                 RadialpopulateTable(circleData.data.demographics);
@@ -3875,7 +4252,7 @@ function populateTableForCircle(circleId) {
             }
         } else {
             table.style.display = "block";
-            // document.getElementById("demographic-table-recruitment").style.display = "none";
+            document.getElementById("demographic-table-recruitment").style.display = "none";
             document.getElementById("demographic-table").style.display = "none";
             resetCircleHighlight(selectedCircleId);
             highlightCircle(circleId);
@@ -3908,61 +4285,31 @@ function resetDemographicTable() {
     selectedCircleId = null;
     accumulatedData = {
         population: 0,
-        total_households: 0,
-        income_less_than_10k: 0,
-        income_10k_15k: 0,
-        income_15k_25k: 0,
-        income_25k_35k: 0,
-        income_35k_50k: 0,
-        income_50k_75k: 0,
-        income_75k_100k: 0,
-        income_100k_150k: 0,
-        income_150k_200k: 0,
-        income_200k_plus: 0
+        median_income: 0,
     };
     document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent = '';
     document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[2].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[3].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[4].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[5].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[6].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[7].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[8].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[9].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[10].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[11].cells[1].textContent = '';
     circles.forEach((data, id) => {
         resetCircleHighlight(id);
     });
 }
 function setupMapClickListener() {
     google.maps.event.addListener(map, 'click', function(event) {
-        const demographicTable = document.getElementById("demographic-table");
-        // const demographicTableRecruitment = document.getElementById("demographic-table-recruitment");
         const demographicTableRadial = document.getElementById("demographic-table-radial");
+        if (selectedCircleId && circles[selectedCircleId] && circles[selectedCircleId].cid) {
+            return;
+        }
         if (!lastInteractedFeatureIds || lastInteractedFeatureIds.length === 0) {
-            if (demographicTable && demographicTable.style.display === "block") {
-                demographicTable.style.display = "none";
-                if (selectedGroupForDeletion) {
-                    resetGroupHighlight(selectedGroupForDeletion);
-                    selectedGroupForDeletion = null;
-                }
+            demographicTableRadial.style.display = "none";
+            accumulatedData = null;
+            if (selectedCircleId) {
+                resetCircleHighlight(selectedCircleId);
+                selectedCircleId = null;
             }
-            if (demographicTableRadial && demographicTableRadial.style.display === "block") {
-                demographicTableRadial.style.display = "none";
-                if (selectedCircleId) {
-                    resetCircleHighlight(selectedCircleId);
-                    selectedCircleId = null;
-                }
-            }
-            const actionBtn = document.getElementById('ActionBtn');
-            const closeBtn = document.getElementById('CloseBtn');
-            if (actionBtn) actionBtn.style.display = "none";
-            if (closeBtn) closeBtn.style.display = "none";
         }
     });
 }
+
 function resetGroupHighlight(groupId) {
     featureLayer.style = (feature) => applyStyle(feature);
     updateLabels();
@@ -4001,60 +4348,18 @@ function initAutocomplete(input) {
 }
 function RadialpopulateTable(data) {
     document.getElementById("demographic-table-radial").style.display = "block";
-    // document.getElementById("demographic-table-recruitment").style.display = "none";
+    document.getElementById("demographic-table-recruitment").style.display = "none";
     document.getElementById("demographic-table").style.display = "none";
-    
     if (!accumulatedData) {
         accumulatedData = {
             population: 0,
-            total_households: 0,
-            income_less_than_10k: 0,
-            income_10k_15k: 0,
-            income_15k_25k: 0,
-            income_25k_35k: 0,
-            income_35k_50k: 0,
-            income_50k_75k: 0,
-            income_75k_100k: 0,
-            income_100k_150k: 0,
-            income_150k_200k: 0,
-            income_200k_plus: 0
+            median_income: 0
         };
     }
-
-    // Only add population if it's a valid number and greater than 0
-    if (data.population && parseInt(data.population) > 0) {
-        // For population, we'll only add it once (the first time a valid population is received)
-        if (accumulatedData.population === 0) {
-            accumulatedData.population = parseInt(data.population);
-        }
-    }
-
-    // Continue with other demographic data accumulation as before
-    accumulatedData.total_households += parseInt(data.total_households) || 0;
-    accumulatedData.income_less_than_10k += parseInt(data.income_less_than_10k) || 0;
-    accumulatedData.income_10k_15k += parseInt(data.income_10k_15k) || 0;
-    accumulatedData.income_15k_25k += parseInt(data.income_15k_25k) || 0;
-    accumulatedData.income_25k_35k += parseInt(data.income_25k_35k) || 0;
-    accumulatedData.income_35k_50k += parseInt(data.income_35k_50k) || 0;
-    accumulatedData.income_50k_75k += parseInt(data.income_50k_75k) || 0;
-    accumulatedData.income_75k_100k += parseInt(data.income_75k_100k) || 0;
-    accumulatedData.income_100k_150k += parseInt(data.income_100k_150k) || 0;
-    accumulatedData.income_150k_200k += parseInt(data.income_150k_200k) || 0;
-    accumulatedData.income_200k_plus += parseInt(data.income_200k_plus) || 0;
-
-    // Update table cells as before
-    document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent = accumulatedData.population.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent = accumulatedData.total_households.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[2].cells[1].textContent = accumulatedData.income_less_than_10k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[3].cells[1].textContent = accumulatedData.income_10k_15k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[4].cells[1].textContent = accumulatedData.income_15k_25k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[5].cells[1].textContent = accumulatedData.income_25k_35k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[6].cells[1].textContent = accumulatedData.income_35k_50k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[7].cells[1].textContent = accumulatedData.income_50k_75k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[8].cells[1].textContent = accumulatedData.income_75k_100k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[9].cells[1].textContent = accumulatedData.income_100k_150k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[10].cells[1].textContent = accumulatedData.income_150k_200k.toString();
-    document.querySelector("#demographicTableRadial tbody").rows[11].cells[1].textContent = accumulatedData.income_200k_plus.toString();
+    accumulatedData.population += parseInt(data.population) || 0;
+    accumulatedData.median_income += parseInt(data.median_income) || 0;
+    document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent = data.population || 0;
+    document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent = data.median_income || 0;
 }
 async function fetchPopulationData(center, radius) {
     try {
@@ -4079,20 +4384,21 @@ async function fetchPopulationData(center, radius) {
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
         const result = await response.json();
-        console.log("Population API response:- ", result);
         if (result.success) {
-            return result.data.population;
+            return {
+                population: result.data.population || 0,
+                median_income: parseFloat(result.data.median_income || 0).toFixed(2)
+            };
         } else {
             console.error("Error fetching population data:", result.error);
-            return null;
+            return { population: 0, median_income: 0 };
         }
     } catch (error) {
         console.error("Error fetching population data:", error);
-        return null;
+        return { population: 0, median_income: 0 };
     }
 }
 
-// Keep the original function but modify to use the new API for population
 async function fetchDataByPostalCode(postalCode, isFirstZipCode = false, populationValue = null) {
     const loaderWrapper = document.getElementById('loader-wrapper');    
     try {
@@ -4106,23 +4412,18 @@ async function fetchDataByPostalCode(postalCode, isFirstZipCode = false, populat
         }
         const result = await response.json();
         if (!result.success) {
-            alert("Could not find data for ZIP code: " + postalCode);
             console.warn(`No data found for ZIP code ${postalCode}: ${result.error}`);
             return null;
         }
         const processedData = {...result.data};
 
-        // Improved population handling
         console.log(`Processing postal code: ${postalCode}`);
         console.log(`Population value: ${populationValue}`);
         console.log(`Is first ZIP code: ${isFirstZipCode}`);
 
-        // Always use the population value if it's not null
         if (populationValue !== null) {
             processedData.population = populationValue;
         }
-
-        RadialpopulateTable(processedData);
         if (activeCircle && activeCircleId) {
             const circleData = circles.get(activeCircleId);
             if (circleData) {
@@ -4170,17 +4471,19 @@ async function getPlacesInCircle(center, radius) {
         loaderWrapper.style.display = 'block'; 
     }
     let populationData = null;
-    let populationAdded = false;  // Flag to track if population has been added
-
+    let populationAdded = false; 
     try {
         populationData = await fetchPopulationData(center, radius);
-        console.log("Population data after calling function in get Places in circle", populationData);
+        if (populationData) {
+            RadialpopulateTable(populationData); 
+            console.log("Updated accumulatedData with new population and income.");
+        }
     } catch (error) {
         console.error("Error fetching population from API:", error);
     }
 
     const location = `${center.lat},${center.lng}`;
-    const url = `https://eggbred.pythonanywhere.com/nearbysearch?location=${location}&radius=${radius}&type=post_office`;
+    const url = `http://localhost:5000/nearbysearch?location=${location}&radius=${radius}&type=post_office`;
     try {
         const response = await fetch(url);
         const data = await response.json();
@@ -4195,28 +4498,27 @@ async function getPlacesInCircle(center, radius) {
         );
         const uniquePostalCodes = Array.from(postalCodesSet);
         const processingResults = [];
-        await Promise.all(uniquePostalCodes.map(async (postalCode, index) => {
-            try {
-                // Only pass population for the first valid postal code
-                const populationToUse = !populationAdded ? populationData : null;
-                
-                const result = await fetchDataByPostalCode(postalCode, !populationAdded, populationToUse);
-                
-                if (result) {
-                    add_state_raial(postalCode);
-                    processingResults.push(postalCode);
-                    
-                    // Mark population as added after the first successful result
-                    if (!populationAdded) {
-                        populationAdded = true;
+        await Promise.all(
+            uniquePostalCodes.map(async (postalCode, index) => {
+                try {
+                    const populationToUse = !populationAdded ? populationData : null;
+                    const result = await fetchDataByPostalCode(postalCode, !populationAdded, populationToUse);
+                    if (result) {
+                        add_state_raial(postalCode);
+                        processingResults.push(postalCode);
+                        
+                        if (!populationAdded) {
+                            populationAdded = true;
+                        }
+                    } else {
+                        console.warn(`Skipping postal code ${postalCode} due to missing data`);
                     }
-                } else {
-                    console.warn(`Skipping postal code ${postalCode} due to missing data`);
+                } catch (error) {
+                    console.warn(`Error processing postal code ${postalCode}:`, error);
                 }
-            } catch (error) {
-                console.warn(`Error processing postal code ${postalCode}:`, error);
-            }
-        }));
+            })
+        );
+
         if (loaderWrapper) {
             loaderWrapper.style.display = 'none';
         }
@@ -4230,8 +4532,11 @@ async function getPlacesInCircle(center, radius) {
     }
 }
 
+
 async function createCircleAtSelectedLocation() {
-    resetDemographicTable();
+    resetDemographicTable(); 
+    isCircleSaved = false; 
+
     if (selectedLocation) {
         if (currentMarker) {
             currentMarker.setMap(null);
@@ -4245,16 +4550,24 @@ async function createCircleAtSelectedLocation() {
             map: map,
             center: selectedLocation,
             radius: 4828.03,
-            fillColor: '#808080',
+            fillColor: "#808080",
             fillOpacity: 0.2,
-            strokeColor: '#808080',
+            strokeColor: "#808080",
             strokeOpacity: 0.5,
             strokeWeight: 2,
-            id: newCircleId
+            id: newCircleId,
         });
+        try {
+            const data = await fetchPopulationData(selectedLocation, 4828.03);
+            console.log("Fetched data for selected location:", data);
+            RadialpopulateTable(data);
+        } catch (error) {
+            console.error(`Error fetching population data for circle ${newCircleId}:`, error);
+        }
         let placesInCircle = [];
         try {
             placesInCircle = await getPlacesInCircle(selectedLocation, 4828.03);
+            console.log("Places fetched in circle:", placesInCircle);
         } catch (error) {
             console.error(`Error fetching places for circle ${newCircleId}:`, error);
         }
@@ -4262,40 +4575,45 @@ async function createCircleAtSelectedLocation() {
             circle: newCircle,
             label: null,
             data: {
-                name: '',
-                color: '#808080',
+                name: "",
+                color: "#808080",
                 radius: 4828.03,
-                places: placesInCircle 
-            }
+                places: placesInCircle,
+                demographics: {},
+            },
         };
         circles.set(newCircleId, circleDataToSet);
         activeCircle = newCircle;
-        const mapClickListener = map.addListener('click', () => {
-            newCircle.setMap(null);
-            circles.delete(newCircleId);
-            activeCircle = null;
-            activeCircleId = null;
-            google.maps.event.removeListener(mapClickListener);
-            document.getElementById("ActionBtnRadial").style.display = "block";
-            document.getElementById("CloseBtnRadial").style.display = "block";
+        const mapClickListener = map.addListener("click", () => {
+            if (!isCircleSaved) {
+                console.log("Circle not saved. Removing circle and clearing data...");
+                newCircle.setMap(null);
+                circles.delete(newCircleId);
+                activeCircle = null;
+                activeCircleId = null;
+                resetDemographicTable(); // Clear demographic data
+                google.maps.event.removeListener(mapClickListener);
+                document.getElementById("ActionBtnRadial").style.display = "block";
+                document.getElementById("CloseBtnRadial").style.display = "block";
+            }
         });
         newCircle.addListener("click", () => {
             activeCircle = newCircle;
             activeCircleId = newCircleId;
             showInputPanel();
         });
-        showInputPanel();
         document.getElementById("ActionBtnRadial").style.display = "none";
         document.getElementById("CloseBtnRadial").style.display = "none";
-        return newCircleId;
+        showInputPanel();
     }
-    return null;
 }
+
+
 function showInputPanel() {
     const panel = document.getElementById("demographic-table-radial");
     if (panel) {
         panel.style.display = "block";
-        // document.getElementById("demographic-table-recruitment").style.display = "none";
+        document.getElementById("demographic-table-recruitment").style.display = "none";
         document.getElementById("demographic-table").style.display = "none";
         const nameInput = document.getElementById("area-name-radial");
         const radiusInput = document.getElementById("typeNumber");
@@ -4464,7 +4782,7 @@ function exportToCSVRadial() {
 }
 function returnToMapRadial() {
     document.getElementById("tableViewRadial").style.display = "none";
-    document.getElementById("map").style.display = "block";
+    document.getElementById("map-container").style.display = "block";
 }
 function initializeColorOptionsRadial() {
     document.querySelectorAll('.color-option').forEach(option => {
@@ -4530,17 +4848,7 @@ function handleSaveRadial() {
     const color = selectedColorOption.dataset.color;
     const demographicData = {
         population: document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent,
-        total_households: document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent,
-        income_less_than_10k: document.querySelector("#demographicTableRadial tbody").rows[2].cells[1].textContent,
-        income_10k_15k: document.querySelector("#demographicTableRadial tbody").rows[3].cells[1].textContent,
-        income_15k_25k: document.querySelector("#demographicTableRadial tbody").rows[4].cells[1].textContent,
-        income_25k_35k: document.querySelector("#demographicTableRadial tbody").rows[5].cells[1].textContent,
-        income_35k_50k: document.querySelector("#demographicTableRadial tbody").rows[6].cells[1].textContent,
-        income_50k_75k: document.querySelector("#demographicTableRadial tbody").rows[7].cells[1].textContent,
-        income_75k_100k: document.querySelector("#demographicTableRadial tbody").rows[8].cells[1].textContent,
-        income_100k_150k: document.querySelector("#demographicTableRadial tbody").rows[9].cells[1].textContent,
-        income_150k_200k: document.querySelector("#demographicTableRadial tbody").rows[10].cells[1].textContent,
-        income_200k_plus: document.querySelector("#demographicTableRadial tbody").rows[11].cells[1].textContent
+        median_income: document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent,
     };
     const franchiseeNumber = document.getElementById("franchise-number-radial").value.trim();
     const city = document.getElementById("city-radial").value.trim();
@@ -4598,25 +4906,16 @@ function handleSaveRadial() {
                 }
                 accumulatedData = {
                     population: 0,
-                    total_households: 0,
-                    income_less_than_10k: 0,
-                    income_10k_15k: 0,
-                    income_15k_25k: 0,
-                    income_25k_35k: 0,
-                    income_35k_50k: 0,
-                    income_50k_75k: 0,
-                    income_75k_100k: 0,
-                    income_100k_150k: 0,
-                    income_150k_200k: 0,
-                    income_200k_plus: 0
+                    median_income: 0,
                 };
-                activeCircle = null;
+                // activeCircle = null;
             }, 2000);
             location.reload();
         })
         .catch(error => {
             console.error("Error in save process:", error);
         });
+        isCircleSaved = true;
 }
 function saveCirclesToLocalStorage() {
     return new Promise((resolve, reject) => {
@@ -4669,19 +4968,9 @@ function saveCirclesToLocalStorage() {
                     }
                     accumulatedData = {
                         population: 0,
-                        total_households: 0,
-                        income_less_than_10k: 0,
-                        income_10k_15k: 0,
-                        income_15k_25k: 0,
-                        income_25k_35k: 0,
-                        income_35k_50k: 0,
-                        income_50k_75k: 0,
-                        income_75k_100k: 0,
-                        income_100k_150k: 0,
-                        income_150k_200k: 0,
-                        income_200k_plus: 0
+                        median_income: 0,
                     };
-                    activeCircle = null;
+                    // activeCircle = null;
                 }
             },
             error: function(xhr, status, error) {
@@ -4704,11 +4993,11 @@ function initializeEventListenersRadial() {
             });
         }
     });
-    document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        prefixRadial = document.getElementById('prefixInput').value.trim();
-        $('#editLabelModal').modal('hide');
-        updateLabelsRadial();
-    });
+    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
+    //     prefixRadial = document.getElementById('prefixInput').value.trim();
+    //     $('#editLabelModal').modal('hide');
+    //     updateLabelsRadial();
+    // });
     document.querySelectorAll('.color-option').forEach(option => {
         const color = option.getAttribute('data-color');
         let rgbValues;
@@ -4803,20 +5092,21 @@ async function handleRadiusChange(newRadius) {
                 ...circleData.data,
                 radius: newRadius,
                 places: placesInCircle,
-                demographics: { ...accumulatedData }
+                demographics: { ...accumulatedData }  
             };
+            console.log("Accumulated data ", circleData.data)
             circles.set(activeCircleId, circleData);
             const updatedCircleData = {
                 id: activeCircleId,
                 name: circleData.data.name || '',
                 color: circleData.data.color || '#808080',
                 classificationText: circleData.data.classificationText || 'Unclassified',
-                center: center, 
+                center: center,
                 radius: newRadius,
                 franchiseeNumber: circleData.data.franchiseeNumber || '',
                 city: circleData.data.city || '',
                 state: circleData.data.state || '',
-                demographics: circleData.data.demographics || {},
+                demographics: circleData.data.demographics || {},  
                 places: circleData.data.places || []
             };
             const response = await fetch(`/update_circle/${activeCircleId}`, {
@@ -4829,7 +5119,7 @@ async function handleRadiusChange(newRadius) {
                 throw new Error('Failed to update circle data');
             }
             if (accumulatedData) {
-                renderPieChartRadial();
+                renderPieChartRadial(); 
             }
         }
     } catch (error) {

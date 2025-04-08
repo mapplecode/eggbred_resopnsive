@@ -1,19 +1,19 @@
 let isMapLoaded = false;
 let map;
 let featureLayer;
-let showPostalCodes = true; 
-let lastInteractedFeatureIds = [];
-let isAreaDevClicked = false;
-let isRecruitmentClicked = false;
-let selectedRegions = new Map();
-let selectedRegionsRecruitment = new Map();
-let labels = [];
-let labelsRecruitment = []
-let overlays = [];
-let overlaysRecruitment = []
-let all_place_ids = []
-let selectedRegionGroups = new Map();
-let selectedRegionGroupsRecruitment = new Map();
+let showPostalCodesMob = true; 
+let lastInteractedFeatureIdsMob = [];
+let isAreaDevClickedMob = false;
+let isRecruitmentClickedMob = false;
+let selectedRegionsMob = new Map();
+let selectedRegionsRecruitmentMob = new Map();
+let labelsMob = [];
+let labelsRecruitmentMob = []
+let overlaysMob = [];
+let overlaysRecruitmentMob = []
+let all_place_idsMob = []
+let selectedRegionGroupsMob = new Map();
+let selectedRegionGroupsRecruitmentMob = new Map();
 let currentGroupId = 0;
 let currentGroupIdRecruitment = 0;
 let selectedGroupForDeletion = null;
@@ -69,7 +69,7 @@ let prefixRadial = "";
 let isEditingAreaRadial = false;
 let editingGroupIdRadial = null;
 let selectedCircle = null
-let autocomplete;
+let autocompleteMob;
 let isFeatureLayerActive = false;
 let circles = new Map();
 let selectedLocation = null;
@@ -79,19 +79,13 @@ let activeCircleId = null;
 let accumulatedData = null;
 let selectedCircleId = null;
 const circleData = JSON.parse(localStorage.getItem('mapCircles')) || [];
-let currentMarker = null;
+let currentMarkerMob = null;
 let currentMarkerSearch = null;
 let originalRadius = null;
 let hasUnsavedChanges = false;
-let isCircleSaved = false;
 
-export function init() {
-    // Call initNormalMap or any other initialization function you need
-    initNormalMap();
-}
-
-function loadSavedRegions() {
-    if (isAreaDevClicked) { 
+function loadSavedRegionsMob() {
+    if (isAreaDevClickedMob) { 
         if (areRegionsVisible) {
             $.ajax({
                 url: "/load_regions",
@@ -100,11 +94,11 @@ function loadSavedRegions() {
                     if (response.status === 'success') {
                         const savedRegions = response.regions || [];
                         const savedGroups = response.regionGroups || [];
-                        selectedRegions.clear();
-                        selectedRegionGroups.clear();
+                        selectedRegionsMob.clear();
+                        selectedRegionGroupsMob.clear();
                         
                         savedRegions.forEach(region => {
-                            selectedRegions.set(region.placeId, {
+                            selectedRegionsMob.set(region.placeId, {
                                 ...region,
                                 displayName: region.displayName || `Feature ${region.placeId}`,
                                 type: 'areaDev' 
@@ -116,7 +110,7 @@ function loadSavedRegions() {
                                 ? JSON.parse(group.demographics)
                                 : group.demographics;
                             
-                            selectedRegionGroups.set(group.id, {
+                            selectedRegionGroupsMob.set(group.id, {
                                 ...group,
                                 regions: groupRegions.map(region => region.placeId),
                                 demographics: demographics,
@@ -124,11 +118,9 @@ function loadSavedRegions() {
                             });
                         });
 
-                        currentGroupId = Math.max(...selectedRegionGroups.keys(), 0) + 1;
-                        updateAreaDevLabels();
-
-                        // ✅ Force Redraw to Show Polygons
-                        refreshFeatureLayer(); 
+                        currentGroupId = Math.max(...selectedRegionGroupsMob.keys(), 0) + 1;
+                        updateAreaDevLabelsMob();
+                        refreshFeatureLayerMob(); 
                     }
                 },
                 error: function(xhr, status, error) {
@@ -137,7 +129,7 @@ function loadSavedRegions() {
             });
         }
     }
-    if (isRecruitmentClicked) {
+    if (isRecruitmentClickedMob) {
         $.ajax({
             url: "/load_regions_recruitment",
             method: "GET",
@@ -145,10 +137,10 @@ function loadSavedRegions() {
                 if (response.status === 'success') {
                     const savedRegions = response.regions || [];
                     const savedGroups = response.regionGroups || [];
-                    selectedRegionsRecruitment.clear();
-                    selectedRegionGroupsRecruitment.clear();
+                    selectedRegionsRecruitmentMob.clear();
+                    selectedRegionGroupsRecruitmentMob.clear();
                     savedRegions.forEach(region => {
-                        selectedRegionsRecruitment.set(region.placeId, {
+                        selectedRegionsRecruitmentMob.set(region.placeId, {
                             ...region,
                             displayName: region.displayName || `Feature ${region.placeId}`,
                             type: 'recruitment'
@@ -159,7 +151,7 @@ function loadSavedRegions() {
                         const demographics = typeof group.demographics === "string"
                             ? JSON.parse(group.demographics)
                             : group.demographics;
-                        selectedRegionGroupsRecruitment.set(group.id, {
+                        selectedRegionGroupsRecruitmentMob.set(group.id, {
                             ...group,
                             regions: groupRegions.map(region => region.placeId),
                             demographicsRec: demographics,
@@ -167,8 +159,8 @@ function loadSavedRegions() {
                         });
                     });
                     currentGroupIdRecruitment = Math.max(...selectedRegionGroupsRecruitment.keys(), 0) + 1;
-                    updateRecruitmentLabels();
-		            refreshFeatureLayer();
+                    updateRecruitmentLabelsMob();
+		            refreshFeatureLayerMob();
                 }
             },
             error: function(xhr, status, error) {
@@ -177,15 +169,15 @@ function loadSavedRegions() {
         });
     }
 }
-function refreshFeatureLayer() {
+function refreshFeatureLayerMob() {
     if (featureLayer) {
-        featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+        featureLayer.style = createApplyStyleMob(styleDefaultNormalmap);
         google.maps.event.trigger(map, "idle");
     }
 }
 
 
-async function loadSavedCircles() {
+async function loadSavedCirclesMob() {
     try {
         const response = await fetch('/get_all_circles');
         const result = await response.json();
@@ -227,12 +219,12 @@ async function loadSavedCircles() {
                 circle.addListener("click", () => {
                     activeCircle = circle;
                     activeCircleId = id;
-                    showInputPanel();
-                    document.getElementById("submit-btn-radial").style.display = "none";
-                    populateTableForCircle(id);
+                    showInputPanelMob();
+                    document.getElementById("submit-btn-radial-mob").style.display = "none";
+                    populateTableForCircleMob(id);
                 });
             });
-            // setupMapClickListener();
+            setupMapClickListenerMob();
         } else {
             console.error('Error fetching circles from server:', result.message);
         }
@@ -240,47 +232,29 @@ async function loadSavedCircles() {
         console.error('Error during fetch:', error);
     }
 }
-function saveRegions() {
-    const selectedRegionsJSON = Array.from(selectedRegions.values());
-    const selectedRegionGroupsJSON = Array.from(selectedRegionGroups.values());
-    $.ajax({
-        url: "/save_regions",
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ selectedRegions: selectedRegionsJSON, selectedRegionGroups: selectedRegionGroupsJSON }),
-        success: function(response) {
-            if (response.success) {
-            } else {
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log(status, "Error sending data:", error);
-        }
-    });
-}
 // Action button event listner for Area development
-function actionBtn() {
-    document.getElementById("ActionBtn").addEventListener("click", function(){
-        document.getElementById("franchiseViewRight").style.display = "block";
-        document.getElementById("demographic-table").style.display = "none";
+function ActionBtnMob() {
+    document.getElementById("ActionBtnMob").addEventListener("click", function(){
+        document.getElementById("franchiseViewRightMob").style.display = "block";
+        document.getElementById("demographic-table-mob").style.display = "none";
     })
 }
 // Close button event listner for Area development
-function closeBtn() {
-    document.getElementById("CloseBtn").addEventListener("click", function(){
-        document.getElementById("demographic-table").style.display = "none";
+function CloseBtnMob() {
+    document.getElementById("CloseBtnMob").addEventListener("click", function(){
+        document.getElementById("demographic-table-mob").style.display = "none";
     })
 }
 // "Go Back" button event listner for Area development
-function GoBackToTableFranchise() {
-    document.getElementById("BackToTableFranchise").addEventListener("click", function(){
-        document.getElementById("demographic-table").style.display = "block";
-        document.getElementById("franchiseViewRight").style.display = "none";
+function GoBackToTableFranchiseMob() {
+    document.getElementById("BackToTableFranchiseMob").addEventListener("click", function(){
+        document.getElementById("demographic-table-mob").style.display = "block";
+        document.getElementById("franchiseViewRightMob").style.display = "none";
     })
 }
 // Function to add data demographic table rows on right panel for area development
-function displayGroupDemographics(demographics) {
-    const table = document.getElementById('demographicTable');
+function displayGroupDemographicsMob(demographics) {
+    const table = document.getElementById('demographicTableMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
@@ -330,14 +304,14 @@ function displayGroupDemographics(demographics) {
     }
 }
 //  Fuction to handle style on Mouse Move for Area development
-function handleMouseMove(e) {
-    lastInteractedFeatureIds = e.features.map((f) => f.placeId);
-    featureLayer.style = applyStyle;
+function handleMouseMoveMob(e) {
+    lastInteractedFeatureIdsMob = e.features.map((f) => f.placeId);
+    featureLayer.style = applyStyleMob;
 }
 // Init function to load map on page load for area development and recruitment analysis
-async function initNormalMap() {
-    const { Map } = await google.maps.importLibrary("maps");
-    map = new Map(document.getElementById("map-container"), {
+async function initNormalMapMob() {
+    // const { Map } = await google.maps.importLibrary("maps");
+    map = new google.maps.Map(document.getElementById('map-container'), {
         center: { lat: 39.0928, lng: -95.8143 },
         zoom: 6,
         mapTypeControl: false,
@@ -352,57 +326,62 @@ async function initNormalMap() {
     });
 
     featureLayer = map.getFeatureLayer("POSTAL_CODE");
-    featureLayer.style = createApplyStyle(styleDefaultNormalmap);
-    featureLayer.addListener("click", handleClick);
-
-    document.getElementById("editAreaBoundry").addEventListener("click", function() {
-        initCustomMap();
-        handleEditArea();
+    featureLayer.style = createApplyStyleMob(styleDefaultNormalmap);
+    featureLayer.addListener("click", handleClickMob);
+    document.getElementById("editAreaBoundryMob").addEventListener("click", function() {
+        initCustomMapMob();
+        handleEditAreaMob();
     });
-    document.getElementById("editAreaBoundryRecruitment").addEventListener("click", function() {
-        initCustomMap();
-        handleEditAreaRecruitment();
+    document.getElementById("editAreaBoundryRecruitmentMob").addEventListener("click", function() {
+        initCustomMapMob();
+        handleEditAreaRecruitmentMob();
     });
-    handleDelete();
-    handleDeleteRecruitment();
-    initializeEventListeners();
-    addControlListeners();
+    handleDeleteMob();
+    handleDeleteRecruitmentMob();
+    initializeEventListenersMob();
+    addControlListenersMob();
     if (isMapLoaded) {
-        updateLabels();
+        updateLabelsMob();
     }
+    // Check and handle the flags
     if (localStorage.getItem('loadSavedRegionsFlag') === 'true') {
-        loadSavedRegions();
+        loadSavedRegionsMob();
     }                             
-    if (localStorage.getItem('isAreaDevClicked') === 'true') {
-        isAreaDevClicked = true;  
-        loadSavedRegions();
-        localStorage.setItem('isAreaDevClicked', 'false');  
+    if (localStorage.getItem('isAreaDevClickedMob') === 'true') {
+        isAreaDevClickedMob = true;  
+        loadSavedRegionsMob();
+        localStorage.setItem('isAreaDevClickedMob', 'false');  
     }
-    if (localStorage.getItem('isRecruitmentClicked') === 'true') {
-        isRecruitmentClicked = true;  
-        loadSavedRegions();
-        localStorage.setItem('isRecruitmentClicked', 'false'); 
+    if (localStorage.getItem('isRecruitmentClickedMob') === 'true') {
+        isRecruitmentClickedMob = true;  
+        loadSavedRegionsMob();
+        localStorage.setItem('isRecruitmentClickedMob', 'false'); 
     }
     if (localStorage.getItem('leftPanelActive') === 'true') {
         $('#leftPanel').addClass('active');
         localStorage.setItem('leftPanelActive', 'false'); 
     }
     google.maps.event.addDomListener(window, 'load', () => {
-        initializePostalCodeOverlay();  
+        initializePostalCodeOverlayMob();  
     });
     
 }
 // Init function with postal layer configuration for area development and recruitment analysis
-async function initCustomMap() {
-    showPostalCodes = true;
-    if (isAreaDevClicked ) {
-        customMapStyling();
+async function initCustomMapMob() {
+    showPostalCodesMob = true;
+    loadSavedRegionsMob();
+    initializeEventListenersMob();
+    addControlListenersMob();
+    customMapEventsFranchiseMob();
+    CustomMapEventRecruitmentMob();
+    if (isAreaDevClickedMob ) {
+        customMapStylingMob();
     }
-    if (isRecruitmentClicked) {
-        customMapStylingRecruit();
+    if (isRecruitmentClickedMob) {
+        customMapStylingRecruitMob();
     }
 }
-async function customMapStyling() {
+async function customMapStylingMob() {
     document.getElementById('loader-wrapper').style.display = 'block';
     currentCenter = currentCenter;
     currentZoom = currentZoom || 15;
@@ -417,26 +396,21 @@ async function customMapStyling() {
         minZoom: 10.5,
     });
     featureLayer = map.getFeatureLayer("POSTAL_CODE");
-    featureLayer.style = isEditingArea ? createNewAreaStyle : applyStyle;
-    featureLayer.addListener("click", handleClick);
-    featureLayer.addListener("mousemove", handleMouseMove);
+    featureLayer.style = isEditingArea ? createNewAreaStyleMob : applyStyleMob;
+    featureLayer.addListener("click", handleClickMob);
+    featureLayer.addListener("mousemove", handleMouseMoveMob);
     map.addListener("idle", () => {
         const bounds = map.getBounds();
-        if (bounds && showPostalCodes) { // Only display if flag is true
-            all_place_ids = get_all_place_ids();
-            displayVisiblePlaceIds(bounds);
+        if (bounds && showPostalCodesMob) { // Only display if flag is true
+            all_place_idsMob = get_all_place_idsMob();
+            displayVisiblePlaceIdsMob(bounds);
         }
     });
     setTimeout(() => {
         document.getElementById('loader-wrapper').style.display = 'none';
     }, 2000);
-    loadSavedRegions();
-    initializeEventListeners();
-    addControlListeners();
-    customMapEventsFranchise();
-    CustomMapEventRecruitment();
 }
-async function customMapStylingRecruit() {
+async function customMapStylingRecruitMob() {
     document.getElementById('loader-wrapper').style.display = 'block';
     currentCenter = currentCenter;
     currentZoom = currentZoom || 15;
@@ -454,37 +428,33 @@ async function customMapStylingRecruit() {
     featureLayer = map.getFeatureLayer("POSTAL_CODE");
     
     // Conditional styling based on whether we are editing the area or not
-    featureLayer.style = isEditingAreaRecruit ? createNewAreaStyle : applyStyle;
-    featureLayer.addListener("click", handleClick);
-    featureLayer.addListener("mousemove", handleMouseMove);
+    featureLayer.style = isEditingAreaRecruit ? createNewAreaStyleMob : applyStyleMob;
+    featureLayer.addListener("click", handleClickMob);
+    featureLayer.addListener("mousemove", handleMouseMoveMob);
     
     map.addListener("idle", () => {
         const bounds = map.getBounds();
-        if (bounds && showPostalCodes) { // Only display if flag is true
-            all_place_ids = get_all_place_ids();
-            displayVisiblePlaceIds(bounds);
+        if (bounds && showPostalCodesMob) { // Only display if flag is true
+            all_place_idsMob = get_all_place_idsMob();
+            displayVisiblePlaceIdsMob(bounds);
         }
     });
     setTimeout(() => {
         document.getElementById('loader-wrapper').style.display = 'none';
     }, 2000);
-    loadSavedRegions();
-    initializeEventListeners();
-    addControlListeners();
-    customMapEventsFranchise();
-    CustomMapEventRecruitment();
 }
 
 // Area development submit, input and demographic buttons evenet listner
-function customMapEventsFranchise() {
-    document.getElementById('submit-btn').addEventListener('click', function() {
-        handleSubmit();
-        hide_demographic_table();
+function customMapEventsFranchiseMob() {
+    document.getElementById('submit-btn-mob').addEventListener('click', function() {
+        alert("continue clicked");
+        handleSubmitMob();
+        hide_demographic_tableMob();
     });
-    document.getElementById("DeleteLayerButton").addEventListener("click", handleDelete);
-    document.getElementById("createNewAreaBtn").addEventListener("click", function() {
-        initCustomMap();
-        var table = document.getElementById('demographic-table');
+    document.getElementById("DeleteLayerButtonFranchiseMob").addEventListener("click", handleDeleteMob);
+    document.getElementById("createNewAreaBtnMob").addEventListener("click", function() {
+        initCustomMapMob();
+        var table = document.getElementById('demographic-table-mob');
         if (table.style.display === 'none' || table.style.display === '') {
             table.style.display = 'block';
             this.textContent = 'Hide Demographic Data';
@@ -517,16 +487,15 @@ function customMapEventsFranchise() {
         });
     }); 
 }
-function CustomMapEventRecruitment() {
-    document.getElementById('submit-btn-recruitment').addEventListener('click', function() {
-        handleSubmitRecruitment();
+function CustomMapEventRecruitmentMob() {
+    document.getElementById('submit-btn-recruitment-mob').addEventListener('click', function() {
+        handleSubmitRecruitmentMob();
         hide_demographic_table_Recruitment();
     });
-    
-    document.getElementById("save-btn-recruitment").addEventListener("click", handleSave);
-    document.getElementById("createNewAreaBtnRecruitment").addEventListener("click", function() {
-        initCustomMap();
-        var table = document.getElementById('demographic-table-recruitment');
+    document.getElementById("save-btn-recruitment-mob").addEventListener("click", handleSaveMob);
+    document.getElementById("createNewAreaBtnRecruitmentMob").addEventListener("click", function() {
+        initCustomMapMob();
+        var table = document.getElementById('demographic-table-recruitment-mob');
         if (table.style.display === 'none' || table.style.display === '') {
             table.style.display = 'block';
             this.textContent = 'Hide Demographic Data';
@@ -570,129 +539,131 @@ function CustomMapEventRecruitment() {
         });
     });
 }
-//  Function to clear area polygons from map
-function clearMapElements() {
-        overlays.forEach(overlay => overlay.setMap(null));
-        labels.forEach(label => label.setMap(null));
-        overlays = [];
-        labels = [];
-        regionPolygonRecruit.forEach(polygon => {
-            if (polygon) polygon.setMap(null);
-        });
-        regionPolygonRecruit = [];
-}
-function clearMapElementsRecruitment() {
-        overlaysRecruitment.forEach(overlay => overlay.setMap(null));
-        labelsRecruitment.forEach(label => label.setMap(null));
-        overlaysRecruitment = [];
-        labelsRecruitment = [];
-        regionPolygons.forEach(polygon => {
-            if (polygon) polygon.setMap(null);
-        });
-        regionPolygons = [];
-}
 //  Function to clear area polygons from map with less handling
-function clearMapRegions() {
+function clearMapRegionsMob() {
         regionPolygonRecruit.forEach(polygon => {
             if (polygon) polygon.setMap(null);
         });
         regionPolygonRecruit = [];
-        selectedRegions.clear();
-        selectedRegionGroups.clear();
+        selectedRegionsMob.clear();
+        selectedRegionGroupsMob.clear();
         currentGroupId = 1;
-        if (typeof updateLabels === 'function') {
-            updateLabels();
+        if (typeof updateLabelsMob === 'function') {
+            updateLabelsMob();
         }
 }
-function clearMapRegionsRecruitment() {
+function clearMapRegionsRecruitmentMob() {
         regionPolygons.forEach(polygon => {
             if (polygon) polygon.setMap(null);
         });
         regionPolygons = [];
-        selectedRegionsRecruitment.clear();
+        selectedRegionsRecruitmentMob.clear();
         selectedRegionGroupsRecruitment.clear();
         currentGroupIdRecruitment = 1;
-        if (typeof updateLabels === 'function') {
-            updateLabels();
+        if (typeof updateLabelsMob === 'function') {
+            updateLabelsMob();
         }
 }
 
 //  DOM function to handle all the buttons( Area developemnt, radial analysis and recruitment analysis) event listners.
-function addControlListeners() {
+function addControlListenersMob() {
+    document.addEventListener('DOMContentLoaded', function() {
         const searchModal = document.getElementById('searchModal');
         const searchIcon = document.getElementById('mnu-search');
         const closeModal = document.getElementById('closeModal');
         const submitButton = document.getElementById('searchSubmit');
-        const franchiseTerritoriesBtn = document.getElementById('franchiseTerritoriesBtn');
-        const franchiseControls = document.getElementById('franchiseControls');
-        const defaultView = document.getElementById('defaultView');
-        const franchiseView = document.getElementById('franchiseView');
+        const franchiseTerritoriesBtnMob = document.getElementById('franchiseTerritoriesBtnMob');
+        const franchiseControlsMob = document.getElementById('franchiseControlsMob');
+        const leftPanelMob = document.getElementById('leftPanelMob');
+        const franchiseViewMob = document.getElementById('franchiseViewMob');
         const toggleLabelsBtn = document.getElementById('toggleLabelsBtn');
-        const menuBtn = document.getElementById('menuBtn');
-        const backToLayerControlBtn = document.getElementById('backToLayerControlBtn');
-        const createNewAreaBtn = document.getElementById('createNewAreaBtn');
+        const menuBtnMob = document.getElementById('menuBtnMob');
+        const backToLayerControlBtnMob = document.getElementById('backToLayerControlBtnMob');
+        const createNewAreaBtnMob = document.getElementById('createNewAreaBtnMob');
         const dragBtn = document.getElementById('dragBtn');
         const mapElement = document.getElementById('map');
-        const layerInfoView = document.getElementById('layerInfoViewFranchise');
-        const layerInformationBtn = document.getElementById('layerInformationBtn');
-        const backToFranchiseViewBtn = document.getElementById('backToFranchiseViewBtn');
-        const DemographicTable = document.getElementById("demographic-table");
-        const returnToMapFromTable = document.getElementById("returnToMapFromTable");
-        const inputBtn = document.getElementById("input-area");
-        const saveBackBtn = document.getElementById("save-back");
+        const layerInfoViewMob = document.getElementById('layerInfoViewMob');
+        const layerInformationBtnMob = document.getElementById('layerInformationBtnMob');
+        const backToFranchiseViewBtnMob = document.getElementById('backToFranchiseViewBtnMob');
+        const DemographicTable = document.getElementById("demographic-table-mob");
+        const returnToMapFromTableMob = document.getElementById("returnToMapFromTableMob");
+        // const continueBtn = document.getElementById('submit-btn');
+        // const inputField = document.getElementById('input-area');
+        const inputBtn = document.getElementById("input-area-mob");
+        const saveBackBtn = document.getElementById("save-back-mob");
         
-        const RadialAnalysisBtn = document.getElementById('RadialAnalysisBtn');
-        const radialControls = document.getElementById('radialControls');
-        const radialview = document.getElementById('radialview');
-        const toggleLabelsBtnRadial = document.getElementById('toggleLabelsBtnRadial');
-        const menuBtnRadial = document.getElementById('menuBtnRadial');
-        const backToLayerControlBtnFromRadial = document.getElementById('backToLayerControlBtnFromRadial');
-        const createNewAreaBtnRadial = document.getElementById('createNewAreaBtnRadial');
-        const AddressInput = document.getElementById('address-input');
+        const RadialAnalysisBtnMob = document.getElementById('RadialAnalysisBtnMob');
+        const radialControlsMob = document.getElementById('radialControlsMob');
+        const radialviewMob = document.getElementById('radialviewMob');
+        const toggleLabelsBtnRadialMob = document.getElementById('toggleLabelsBtnRadialMob');
+        const menuBtnRadialMob = document.getElementById('menuBtnRadialMob');
+        const backToLayerControlBtnFromRadialMob = document.getElementById('backToLayerControlBtnFromRadialMob');
+        const createNewAreaBtnRadialMob = document.getElementById('createNewAreaBtnRadialMob');
+        const AddressInput = document.getElementById('address-input-mob');
         const mapElementRadial = document.getElementById('map');
-        const layerInfoViewRadial = document.getElementById('layerInfoViewRadial');
-        const layerInformationBtnRadial = document.getElementById('layerInformationBtnRadial');
-        const backToRadialViewBtn = document.getElementById('backToViewBtnRadial');
+        const layerInfoViewRadialMob = document.getElementById('layerInfoViewRadialMob');
+        const layerInformationBtnRadialMob = document.getElementById('layerInformationBtnRadialMob');
+        const backToRadialViewBtn = document.getElementById('backToViewBtnRadialMob');
         const backToLayerControlFromHeatMappingBtnRadial = document.getElementById('backToLayerControlFromHeatMappingBtnRadial');
-        const input = document.getElementById("autocomplete");
-        const input_back_btn = document.getElementById("backToRadialControlFromAutoComplete");
-        const SubmitButtonAutoComplete = document.getElementById("SubmitButtonAutoComplete");
-        const demographicTableRadial = document.getElementById("demographic-table-radial");
-        const submit_btnRadial = document.getElementById("submit-btn-radial");
-        const RadialViewRight = document.getElementById("RadialViewRight");
-        const inputBtnRadial = document.getElementById("input-area-radial");
-        const SaveBackBtnRadial = document.getElementById("save-back-radial");
-        const backToRadialviewBtn = document.getElementById("BackToTableRadial");
-        const editradialnumber =  document.getElementById("editradialnumber");
-        const editAreaBoundryRadial = document.getElementById("editAreaBoundryRadial");
-        const backFromEditRadial = document.getElementById("backFromEditRadial");
-        const DeleteLayerButtonRadial = document.getElementById("DeleteLayerButton");
-        const saveBtnForRadius = document.getElementById("saveBtnForRadius");
-        const radiusInput = document.getElementById('typeNumber');
+        const input = document.getElementById("autocompleteMob");
+        const input_back_btn = document.getElementById("backToRadialControlFromAutoCompleteMob");
+        const submitButtonAutoCompleteMob = document.getElementById("submitButtonAutoCompleteMob");
+        const demographicTableRadial = document.getElementById("demographic-table-radial-mob");
+        const submit_btnRadial = document.getElementById("submit-btn-radial-mob");
+        const RadialViewRightMob = document.getElementById("RadialViewRightMob");
+        const inputBtnRadial = document.getElementById("input-area-radial-mob");
+        const SaveBackBtnRadial = document.getElementById("save-back-radial-mob");
+        const backToRadialviewBtn = document.getElementById("BackToTableRadialMob");
+        const editradialnumber =  document.getElementById("editradialnumberMob");
+        const editAreaBoundryRadialMob = document.getElementById("editAreaBoundryRadialMob");
+        const backFromEditRadialMob = document.getElementById("backFromEditRadialMob");
+        const DeleteLayerButtonRadialMob = document.getElementById("DeleteLayerButton");
+        const saveBtnForRadiusMob = document.getElementById("saveBtnForRadiusMob");
+        const radiusInput = document.getElementById('typeNumberMob');
 
 
-        const recruitmentTerritoriesBtn = document.getElementById('recruitmentTerritoriesBtn');
-        const recruitmentControls = document.getElementById('recruitmentControls');
-        const recruitmentView = document.getElementById('recruitmentView');
-        const toggleLabelsBtnrecruitment = document.getElementById('toggleLabelsBtnrecruitment');
-        const menuBtnrecruitment = document.getElementById('menuBtnrecruitment');
-        const backToLayerControlBtnRecruitment = document.getElementById('backToLayerControlBtnRecruitment');
-        const createNewAreaBtnRecruitment = document.getElementById('createNewAreaBtnRecruitment');
+        const recruitmentTerritoriesBtnMob = document.getElementById('recruitmentTerritoriesBtnMob');
+        const recruitmentControlsMob = document.getElementById('recruitmentControlsMob');
+        const recruitmentViewMob = document.getElementById('recruitmentViewMob');
+        const toggleLabelsBtnrecruitmentMob = document.getElementById('toggleLabelsBtnrecruitmentMob');
+        const menuBtnrecruitmentMob = document.getElementById('menuBtnrecruitmentMob');
+        const backToLayerControlBtnRecruitmentMob = document.getElementById('backToLayerControlBtnRecruitmentMob');
+        const createNewAreaBtnRecruitmentMob = document.getElementById('createNewAreaBtnRecruitmentMob');
         const dragBtnrecruitment = document.getElementById('dragBtnrecruitment');
-        const layerInfoViewRecruitment = document.getElementById('layerInfoViewRecruitment');
-        const layerInformationBtnRecruitment = document.getElementById('layerInformationBtnRecruitment');
-        const backToViewBtnRecruitment = document.getElementById('backToViewBtnRecruitment');
-        const DemographicTableRecruitment = document.getElementById("demographic-table-recruitment")
-        const inputBtnRecruitment = document.getElementById("input-area-recruitment");
+        const layerInfoViewRecruitmentMob = document.getElementById('layerInfoViewRecruitmentMob');
+        const layerInformationBtnRecruitmentMob = document.getElementById('layerInformationBtnRecruitmentMob');
+        const backToViewBtnRecruitmentMob = document.getElementById('backToViewBtnRecruitmentMob');
+        const DemographicTableRecruitment = document.getElementById("demographic-table-recruitment-mob")
+        const inputBtnRecruitment = document.getElementById("input-area-recruitment-mob");
         const returnToMapRecruitmentFromTableRecruitment = document.getElementById("returnToMapRecruitmentFromTableRecruitment")
-        const SaveBackBtnRecruitment = document.getElementById("save-back-recruitment");
-        const returnToMapFromTableRecruitment = document.getElementById("returnToMapFromTableRecruitment");
+        const SaveBackBtnRecruitment = document.getElementById("save-back-recruitment-mob");
+        const returnToMapFromTableRecruitmentMob = document.getElementById("returnToMapFromTableRecruitmentMob");
 
         const colorOptions = document.querySelectorAll('.color-option');
-        document.getElementById("DeleteLayerButtonRecruitment").addEventListener("click", function(){
-            $('#delet-area').modal('show');
-            handleDeleteRecruitment();
+        const sidebar = document.getElementById("sidebar");
+        const sidebarToggle = document.querySelector(".navbar-toggler");
+        // Check if the element exists before clicking
+        
+        document.getElementById("DeleteLayerButtonRecruitmentMob").addEventListener("click", function() {
+            const closeButton = document.getElementById("btn-close");
+            if (closeButton) {
+                const event = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                closeButton.dispatchEvent(event);
+            } else {
+                console.error("Close button not found with ID 'btn-close'");
+            }
+            handleDeleteRecruitmentMob();
         });
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener("click", function () {
+                sidebar.classList.toggle("active");
+            });
+        }
         colorOptions.forEach(option => {
         option.addEventListener('click', function () {
             colorOptions.forEach(opt => opt.classList.remove('active'));
@@ -704,13 +675,13 @@ function addControlListeners() {
         $('#mnu-layer-control').click(function() {
             $('#leftPanel').toggleClass('active');
         });
-        if (returnToMapFromTable) {
-            returnToMapFromTable.addEventListener("click", function() {
+        if (returnToMapFromTableMob) {
+            returnToMapFromTableMob.addEventListener("click", function() {
                 document.getElementById("tableView").style.display = "none";
                 document.getElementById("map-container").style.display = "block";
             });
         }
-        function setupPlacesAutocomplete() {
+        function setupPlacesAutocompleteMob() {
             const searchInput = document.getElementById('autocomplete1');
             if (!searchInput) {
                 console.error('Search input element not found');
@@ -770,7 +741,7 @@ function addControlListeners() {
         });
         searchIcon.onclick = function() {
             searchModal.style.display = 'block';
-            setupPlacesAutocomplete();
+            setupPlacesAutocompleteMob();
         };
         closeModal.onclick = function() {
             searchModal.style.display = 'none';
@@ -785,28 +756,27 @@ function addControlListeners() {
         if (mapElement) {
             mapElement.style.display = "block";
         }
-        if (menuBtn && defaultView && franchiseView) {
-            menuBtn.addEventListener('click', function() {
-                defaultView.style.display = 'none';
-                franchiseView.style.display = 'block';
+        if (menuBtnMob){
+            menuBtnMob.addEventListener('click', function () {
+                leftPanelMob.style.display = "none";
+                franchiseViewMob.style.display = "block";
             });
         }
-        if (franchiseTerritoriesBtn) {
-            franchiseTerritoriesBtn.addEventListener('click', async function() {
-                console.log("clicked franchiseTerritoriesBtn");
-                if (franchiseControls) {
-                    isAreaDevClicked = !isAreaDevClicked;
-                    franchiseControls.style.display = isAreaDevClicked ? 'flex' : 'none';
+        if (franchiseTerritoriesBtnMob) {
+            franchiseTerritoriesBtnMob.addEventListener('click', async function() {
+                if (franchiseControlsMob) {
+                    isAreaDevClickedMob = !isAreaDevClickedMob;
+                    franchiseControlsMob.style.display = isAreaDevClickedMob ? 'flex' : 'none';
                     
-                    if (isAreaDevClicked) {
-                        loadSavedRegions();
+                    if (isAreaDevClickedMob) {
+                        loadSavedRegionsMob();
                     } else {
-                        clearMapRegions();
+                        clearMapRegionsMob();
                         labels.forEach(label => label.setMap(null));
                         labels = [];
-                        selectedRegions.clear();
-                        selectedRegionGroups.clear();
-                        featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+                        selectedRegionsMob.clear();
+                        selectedRegionGroupsMob.clear();
+                        featureLayer.style = createApplyStyleMob(styleDefaultNormalmap);
                     }
                 }
             });
@@ -823,41 +793,47 @@ function addControlListeners() {
                 toggleLabelsBtn.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
                 areRegionsVisible = !isLabelsOn;
                 if (areRegionsVisible) {
-                    loadSavedRegions();
-                    updateLabels();
+                    loadSavedRegionsMob();
+                    updateLabelsMob();
                 } else {
                     labels.forEach(label => label.setMap(null));
                     labels = [];
                 }
-                map.data.setStyle(applyStyle);
+                map.data.setStyle(applyStyleMob);
             });
         }
-        if (backToLayerControlBtn && franchiseView && defaultView) {
-            backToLayerControlBtn.addEventListener('click', function() {
-                isAreaDevClicked = false;
+        if (backToLayerControlBtnMob && franchiseViewMob) {
+            backToLayerControlBtnMob.addEventListener('click', function() {
+                isAreaDevClickedMob = false;
                 isCreatingNewArea = false;
                 isEditingArea = false;
                 isCreatingNewAreaRecruitment = false;
                 isEditingAreaRecruit = false;
-                franchiseView.style.display = 'none';
-                defaultView.style.display = 'block';
-                franchiseControls.style.display = 'none';
-                clearMapRegions();
+                franchiseViewMob.style.display = 'none';
+                franchiseControlsMob.style.display = 'none';
+                clearMapRegionsMob();
                 labels.forEach(label => label.setMap(null));
                 labels = [];
-                featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+                featureLayer.style = createApplyStyleMob(styleDefaultNormalmap);
                 removePostalCodes();
                 DemographicTable.style.display = "none";
                 DemographicTableRecruitment.style.display = "none";
-                DeleteLayerButtonRadial.style.display = "none";
+                DeleteLayerButtonRadialMob.style.display = "none";
+                leftPanelMob.style.display = "block";
                 
             });
         }
-        if (createNewAreaBtn) {
-            createNewAreaBtn.addEventListener('click', function() {
-                initCustomMap();
+        if (createNewAreaBtnMob) {
+            createNewAreaBtnMob.addEventListener('click', function() {
+                initCustomMapMob();
             });
         }
+        // if (continueBtn) {
+        //     continueBtn.addEventListener('click', function() {
+        //         inputBtn.style.display = "block";
+        //         DemographicTable.style.display = "none";
+        //     });
+        // }
         if (dragBtn) {
             dragBtn.addEventListener('dragstart', function(e) {
                 e.target.style.opacity = '0.4';
@@ -868,17 +844,17 @@ function addControlListeners() {
                 e.target.style.opacity = '1';
             });
         }
-        if (layerInformationBtn) {
-            layerInformationBtn.addEventListener('click', function() {
-                franchiseView.style.display = 'none';
-                layerInfoView.style.display = 'block';
+        if (layerInformationBtnMob) {
+            layerInformationBtnMob.addEventListener('click', function() {
+                franchiseViewMob.style.display = 'none';
+                layerInfoViewMob.style.display = 'block';
                 renderPieChart();
             });
         }
-        if (backToFranchiseViewBtn) {
-            backToFranchiseViewBtn.addEventListener('click', function() {
-                layerInfoView.style.display = 'none';
-                franchiseView.style.display = 'block';
+        if (backToFranchiseViewBtnMob) {
+            backToFranchiseViewBtnMob.addEventListener('click', function() {
+                layerInfoViewMob.style.display = 'none';
+                franchiseViewMob.style.display = 'block';
             });
         }
         const layerButtons = document.querySelector('.layer-buttons');
@@ -916,35 +892,36 @@ function addControlListeners() {
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
         //////////////////////////////////////////////////////////////////////////////////////////////////
-        if (DeleteLayerButtonRadial) {
-            DeleteLayerButtonRadial.addEventListener("click", function(){
+        if (DeleteLayerButtonRadialMob) {
+            DeleteLayerButtonRadialMob.addEventListener("click", function(){
+                console.log("Delete Button Clicked for mobile");
                 $('#delet-area').modal('show');
                 handleDeleteRadial();
             })
         }
-        if (editAreaBoundryRadial) {
-            editAreaBoundryRadial.addEventListener("click", function() {
+        if (editAreaBoundryRadialMob) {
+            editAreaBoundryRadialMob.addEventListener("click", function() {
                 editradialnumber.style.display = "block";
 
-                RadialViewRight.style.display = "none";
+                RadialViewRightMob.style.display = "none";
             })
         }
-        if (backFromEditRadial) {
-            backFromEditRadial.addEventListener("click", function() {
+        if (backFromEditRadialMob) {
+            backFromEditRadialMob.addEventListener("click", function() {
                 editradialnumber.style.display = "none";
-                RadialViewRight.style.display = "block";
+                RadialViewRightMob.style.display = "block";
             })
         }
         if (mapElementRadial) {
             mapElementRadial.style.display = "block";
         }
-        if (RadialAnalysisBtn) {
-            RadialAnalysisBtn.addEventListener('click', async function() {
-                if (radialControls) {
-                    radialControls.style.display = radialControls.style.display === 'none' ? 'flex' : 'none';
+        if (RadialAnalysisBtnMob) {
+            RadialAnalysisBtnMob.addEventListener('click', async function() {
+                if (radialControlsMob) {
+                    radialControlsMob.style.display = radialControlsMob.style.display === 'none' ? 'flex' : 'none';
 
-                    if (radialControls.style.display === 'flex') {
-                        loadSavedCircles();
+                    if (radialControlsMob.style.display === 'flex') {
+                        loadSavedCirclesMob();
                         isFeatureLayerActive = !isFeatureLayerActive;
                     } else {
                         clearMapCircles();
@@ -954,8 +931,8 @@ function addControlListeners() {
         }
         if (backToRadialViewBtn) {
             backToRadialViewBtn.addEventListener('click', function() {
-                layerInfoViewRadial.style.display = 'none';
-                radialview.style.display = 'block';
+                layerInfoViewRadialMob.style.display = 'none';
+                radialviewMob.style.display = 'block';
             });
         }
         if (SaveBackBtnRadial) {
@@ -968,70 +945,75 @@ function addControlListeners() {
         if (hideColorsBtn) {
             hideColorsBtn.addEventListener('click', () => toggleClassificationColorsRadial(hideColorsBtn));
         }
-        if (toggleLabelsBtnRadial) {
-            toggleLabelsBtnRadial.addEventListener('click', function() {
-                const isLabelsOn = toggleLabelsBtnRadial.textContent.includes('off');
-                toggleLabelsBtnRadial.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
+        if (toggleLabelsBtnRadialMob) {
+            toggleLabelsBtnRadialMob.addEventListener('click', function() {
+                const isLabelsOn = toggleLabelsBtnRadialMob.textContent.includes('off');
+                toggleLabelsBtnRadialMob.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
                 areRadialLabelsVisible = !isLabelsOn;
                 if (areRadialLabelsVisible) {
-                    loadSavedCircles();
+                    loadSavedCirclesMob();
                     updateLabelsRadial();
                 } else {
                     clearMapCircles();
                 }
             });
         }
-        if (menuBtnRadial && defaultView && radialview) {
-            menuBtnRadial.addEventListener('click', function() {
-                defaultView.style.display = 'none';
-                radialview.style.display = 'block';
+        if (menuBtnRadialMob &&  radialviewMob) {
+            menuBtnRadialMob.addEventListener('click', function() {
+                radialviewMob.style.display = 'block';
+                leftPanelMob.style.display = "none";
             });
         }
-        if (backToLayerControlBtnFromRadial && radialview && defaultView) {
-            backToLayerControlBtnFromRadial.addEventListener('click', function() {
-                radialview.style.display = 'none';
-                defaultView.style.display = 'block';
-                radialControls.style.display = 'none';
+        if (backToLayerControlBtnFromRadialMob && radialviewMob) {
+            backToLayerControlBtnFromRadialMob.addEventListener('click', function() {
+                radialviewMob.style.display = 'none';
+                radialControlsMob.style.display = 'none';
                 clearMapCircles();
                 DemographicTable.style.display = "none";
                 DemographicTableRecruitment.style.display = "none";
                 demographicTableRadial.style.display = "none";
+                leftPanelMob.style.display = "block";
             });
         }
         if (backToLayerControlFromHeatMappingBtnRadial) {
             backToLayerControlFromHeatMappingBtnRadial.addEventListener('click', function() {
                 heatmapviewRadial.style.display = "none";
-                radialview.style.display = "block";
+                radialviewMob.style.display = "block";
             })
         }
-        if (createNewAreaBtnRadial) {
-            createNewAreaBtnRadial.addEventListener('click', function() {;
-                radialview.style.display = "none";
+        if (createNewAreaBtnRadialMob) {
+            createNewAreaBtnRadialMob.addEventListener('click', function() {;
+                radialviewMob.style.display = "none";
                 AddressInput.style.display = "block";
-                setupAutocompleteTrigger(input);
+                if (input) {
+                    setupAutocompleteTrigger();
+                } else {
+                    console.error("Input element 'autocompleteMob' not found!");
+                }
                 resetDemographicTable();
                 demographicTableRadial.style.display = "block";
             });
         }
+        
         if (submit_btnRadial) {
             submit_btnRadial.addEventListener('click', function() {
                 inputBtnRadial.style.display = "block";
                 demographicTableRadial.style.display = "none";
-                document.getElementById("autocomplete").value = '';
+                input.value = '';
             })
         }
-        if (SubmitButtonAutoComplete) {
-            SubmitButtonAutoComplete.addEventListener("click", function() {
+        if (submitButtonAutoCompleteMob) {
+            submitButtonAutoCompleteMob.addEventListener("click", function() {
                 resetDemographicsTable();
+                alert("Submit clicked");
                 createCircleAtSelectedLocation();
-                document.getElementById("submit-btn-radial").style.display = "block";
-                // setupMapClickListener();
+                document.getElementById("submit-btn-radial-mob").style.display = "block";
             })
         }
         if (input_back_btn) {
             input_back_btn.addEventListener('click', function() {
                 AddressInput.style.display = "none";
-                radialview.style.display = "block";
+                radialviewMob.style.display = "block";
             })
         }
         if (dragBtn) {
@@ -1044,26 +1026,26 @@ function addControlListeners() {
                 e.target.style.opacity = '1';
             });
         }
-        if (layerInformationBtnRadial) {
-            layerInformationBtnRadial.addEventListener('click', function() {
-                radialview.style.display = 'none';
-                layerInfoViewRadial.style.display = 'block';
+        if (layerInformationBtnRadialMob) {
+            layerInformationBtnRadialMob.addEventListener('click', function() {
+                radialviewMob.style.display = 'none';
+                layerInfoViewRadialMob.style.display = 'block';
                 renderPieChartRadial();
             });
         }
         if (backToRadialviewBtn) {
             backToRadialviewBtn.addEventListener('click', function() {
-                layerInfoViewRadial.style.display = 'none';
+                layerInfoViewRadialMob.style.display = 'none';
                 demographicTableRadial.style.display = "block";
-                RadialViewRight.style.display = "none";
+                RadialViewRightMob.style.display = "none";
             });
         }
         if (radiusInput) {
             radiusInput.addEventListener('input', handleDynamicRadiusChange);
         }
-        if (saveBtnForRadius) {
-            saveBtnForRadius.addEventListener("click", async () => {
-                const radiusInput = document.getElementById('typeNumber');
+        if (saveBtnForRadiusMob) {
+            saveBtnForRadiusMob.addEventListener("click", async () => {
+                const radiusInput = document.getElementById('typeNumberMob');
                 const newRadiusInMiles = parseFloat(radiusInput.value);
                 if (isNaN(newRadiusInMiles) || newRadiusInMiles < 1) {
                     alert("Please enter a valid radius (minimum 1 mile)");
@@ -1074,7 +1056,7 @@ function addControlListeners() {
                 originalRadius = null;
                 hasUnsavedChanges = false;
                 updateSaveButtonState();
-                document.getElementById("editradialnumber").style.display = "none";
+                document.getElementById("editradialnumberMob").style.display = "none";
             });
         }
         if (SaveBackBtnRecruitment) {
@@ -1085,79 +1067,79 @@ function addControlListeners() {
         }
         if (returnToMapRecruitmentFromTableRecruitment) {
             returnToMapRecruitmentFromTableRecruitment.addEventListener("click", function() {
-                document.getElementById("tableViewRecruitment").style.display = "none";
+                document.getElementById("tableViewRecruitmentMob").style.display = "none";
                 document.getElementById("map-container").style.display = "block";
             });
         }
         if (mapElement) {
             mapElement.style.display = "block";
         }
-        if (recruitmentTerritoriesBtn) {
-            recruitmentTerritoriesBtn.addEventListener('click', async function() {
-                if (recruitmentControls) {
-                    isRecruitmentClicked = !isRecruitmentClicked;
-                    recruitmentControls.style.display = isRecruitmentClicked ? 'flex' : 'none';
-                    if (isRecruitmentClicked) {
-                        loadSavedRegions();
+        if (recruitmentTerritoriesBtnMob) {
+            recruitmentTerritoriesBtnMob.addEventListener('click', async function() {
+                if (recruitmentControlsMob) {
+                    isRecruitmentClickedMob = !isRecruitmentClickedMob;
+                    recruitmentControlsMob.style.display = isRecruitmentClickedMob ? 'flex' : 'none';
+                    if (isRecruitmentClickedMob) {
+                        loadSavedRegionsMob();
                     } else {
-                        clearMapRegionsRecruitment();
-                        labelsRecruitment.forEach(label => label.setMap(null));
-                        labelsRecruitment = [];
+                        clearMapRegionsRecruitmentMob();
+                        labelsRecruitmentMob.forEach(label => label.setMap(null));
+                        labelsRecruitmentMob = [];
                         regionPolygons.forEach(polygon => {
                             if (polygon) polygon.setMap(null);
                         });
                         regionPolygons = [];
-                        selectedRegionsRecruitment.clear();
+                        selectedRegionsRecruitmentMob.clear();
                         selectedRegionGroupsRecruitment.clear();
-                        // if (!isAreaDevClicked) {
-                            featureLayer.style = createApplyStyle(styleDefaultNormalmap);
+                        // if (!isAreaDevClickedMob) {
+                            featureLayer.style = createApplyStyleMob(styleDefaultNormalmap);
                         // }
                     }
                 }
             });
         }
-        if (toggleLabelsBtnrecruitment) {
-            toggleLabelsBtnrecruitment.addEventListener('click', function() {
-                const isLabelsOn = toggleLabelsBtnrecruitment.textContent.includes('off');
-                toggleLabelsBtnrecruitment.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
+        if (toggleLabelsBtnrecruitmentMob) {
+            toggleLabelsBtnrecruitmentMob.addEventListener('click', function() {
+                const isLabelsOn = toggleLabelsBtnrecruitmentMob.textContent.includes('off');
+                toggleLabelsBtnrecruitmentMob.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
                 areRegionsVisibleRecruit = !isLabelsOn;
                 if (areRegionsVisibleRecruit) {
-                    loadSavedRegions();
-                    updateLabels();
+                    loadSavedRegionsMob();
+                    updateLabelsMob();
                 } else {
-                    labelsRecruitment.forEach(label => label.setMap(null));
-                    labelsRecruitment = [];
+                    labelsRecruitmentMob.forEach(label => label.setMap(null));
+                    labelsRecruitmentMob = [];
                 }
-                map.data.setStyle(applyStyle);
+                map.data.setStyle(applyStyleMob);
             });
         }
-        if (menuBtnrecruitment && defaultView && recruitmentView) {
-            menuBtnrecruitment.addEventListener('click', function() {
-                defaultView.style.display = 'none';
-                recruitmentView.style.display = 'block';
+        if (menuBtnrecruitmentMob && recruitmentViewMob) {
+            menuBtnrecruitmentMob.addEventListener('click', function() {
+                recruitmentViewMob.style.display = 'block';
+                leftPanelMob.style.display = "none";
             });
         }
-        if (backToLayerControlBtnRecruitment && recruitmentView && defaultView) {
-            backToLayerControlBtnRecruitment.addEventListener('click', function() {
+        if (backToLayerControlBtnRecruitmentMob && recruitmentViewMob) {
+            backToLayerControlBtnRecruitmentMob.addEventListener('click', function() {
                 isCreatingNewArea = false;
                 isEditingArea = false;
                 isCreatingNewAreaRecruitment = false;
                 isEditingAreaRecruit = false;
-                recruitmentView.style.display = 'none';
-                defaultView.style.display = 'block';
-                recruitmentControls.style.display = 'none';
-                clearMapRegionsRecruitment();
-                labelsRecruitment.forEach(label => label.setMap(null));
-                labelsRecruitment = [];
+                recruitmentViewMob.style.display = 'none';
+                recruitmentControlsMob.style.display = 'none';
+                clearMapRegionsRecruitmentMob();
+                labelsRecruitmentMob.forEach(label => label.setMap(null));
+                labelsRecruitmentMob = [];
                 removePostalCodes();
                 DemographicTable.style.display = "none";
                 DemographicTableRecruitment.style.display = "none";
-                DeleteLayerButtonRadial.style.display = "none";
+                DeleteLayerButtonRadialMob.style.display = "none";
+                leftPanelMob.style.display = "block";
             });
         }
-        if (createNewAreaBtnRecruitment) {
-            createNewAreaBtnRecruitment.addEventListener('click', function() {
-                initCustomMap();
+        if (createNewAreaBtnRecruitmentMob) {
+            createNewAreaBtnRecruitmentMob.addEventListener('click', function() {
+                initCustomMapMob();
             });
         }
         if (dragBtnrecruitment) {
@@ -1170,22 +1152,22 @@ function addControlListeners() {
                 e.target.style.opacity = '1';
             });
         }
-        if (layerInformationBtnRecruitment) {
-            layerInformationBtnRecruitment.addEventListener('click', function() {
-                recruitmentView.style.display = 'none';
-                layerInfoViewRecruitment.style.display = 'block';
+        if (layerInformationBtnRecruitmentMob) {
+            layerInformationBtnRecruitmentMob.addEventListener('click', function() {
+                recruitmentViewMob.style.display = 'none';
+                layerInfoViewRecruitmentMob.style.display = 'block';
                 renderPieChartRecruitment();
             });
         }
-        if (backToViewBtnRecruitment) {
-            backToViewBtnRecruitment.addEventListener('click', function() {
-                layerInfoViewRecruitment.style.display = 'none';
-                recruitmentView.style.display = 'block';
+        if (backToViewBtnRecruitmentMob) {
+            backToViewBtnRecruitmentMob.addEventListener('click', function() {
+                layerInfoViewRecruitmentMob.style.display = 'none';
+                recruitmentViewMob.style.display = 'block';
             });
         }
-        if (returnToMapFromTableRecruitment) {
-            returnToMapFromTableRecruitment.addEventListener("click", function() {
-                document.getElementById("tableViewRecruitment").style.display = "none";
+        if (returnToMapFromTableRecruitmentMob) {
+            returnToMapFromTableRecruitmentMob.addEventListener("click", function() {
+                document.getElementById("tableViewRecruitmentMob").style.display = "none";
                 document.getElementById("map-container").style.display = "block";
             });
         }
@@ -1218,21 +1200,22 @@ function addControlListeners() {
                 }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
+    });
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     initializeColorOptions();
-    initializeEventListeners();
+    initializeEventListenersMob();
     initializeCreateNewAreaButtons();
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table view" || button.textContent === "Demographic report") {
           button.addEventListener("click", function() {
-            document.getElementById("map-container").style.display = "none";
+            document.getElementById("map").style.display = "none";
             document.getElementById("tableView").style.display = "block";
             populateTable();
           });
         }
     });
-    document.getElementById("exportToCSV").addEventListener("click", exportToCSV);
-    document.getElementById("DownloadDemographicbreakdown").addEventListener("click", exportToCSV);
+    document.getElementById("exportToCSVMob").addEventListener("click", exportToCSVMob);
+    document.getElementById("DownloadDemographicbreakdownMob").addEventListener("click", exportToCSVMob);
     const layerInfoBtn = Array.from(document.querySelectorAll('.action-btn')).find(
         (el) => el.textContent.includes("Layer information")
     );
@@ -1251,14 +1234,14 @@ function addControlListeners() {
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table View " || button.textContent === "Demographic Report") {
           button.addEventListener("click", function() {
-            document.getElementById("map-container").style.display = "none";
-            document.getElementById("tableViewRecruitment").style.display = "block";
+            document.getElementById("map").style.display = "none";
+            document.getElementById("tableViewRecruitmentMob").style.display = "block";
             populateTableRecruitment();
           });
         }
     });
-    document.getElementById("exportToCSVRecruitment").addEventListener("click", exportToCSVRecruitment);
-    document.getElementById("DownloadDemographicbreakdownRecruitment").addEventListener("click", exportToCSVRecruitment);
+    // document.getElementById("exportToCSVRecruitmentMob").addEventListener("click", exportToCSVRecruitmentMob);
+    document.getElementById("DownloadDemographicbreakdownRecruitmentMob").addEventListener("click", exportToCSVRecruitmentMob);
     // document.getElementById('saveLabelChanges').addEventListener('click', function() {
     //     const prefixRecruitment = document.getElementById('prefixInput').value;
     //     $('#editLabelModal').modal('hide');
@@ -1266,24 +1249,24 @@ function addControlListeners() {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     initializeColorOptionsRadial();
     initializeEventListenersRadial();
-    document.getElementById("DeleteLayerButtonRadial").addEventListener("click", handleDeleteRadial);
+    document.getElementById("DeleteLayerButtonRadialMob").addEventListener("click", handleDeleteRadial);
     document.querySelectorAll(".action-btn").forEach(button => {
         if (button.textContent === "Table View" || button.textContent === "Demographic report ") {
           button.addEventListener("click", function() {
-            document.getElementById("map-container").style.display = "none";
-            document.getElementById("tableViewRadial").style.display = "block";
+            document.getElementById("map").style.display = "none";
+            document.getElementById("tableViewRadialMob").style.display = "block";
             populateCircleTable();
           });
         }
     });
-    document.getElementById("exportToCSVRadial").addEventListener("click", exportToCSVRadial);
-    document.getElementById("returnToMapFromTableRadial").addEventListener("click", returnToMapRadial);
+    document.getElementById("exportToCSVRadialMob").addEventListener("click", exportToCSVRadialMob);
+    document.getElementById("returnToMapFromTableRadialMob").addEventListener("click", returnToMapRadial);
     // document.getElementById('saveLabelChanges').addEventListener('click', function() {
     //     const prefixRadial = document.getElementById('prefixInput').value;
     //     $('#editLabelModal').modal('hide');
     // });
-    actionBtnRadial();
-    closeBtnRadial();
+    ActionBtnRadialMob();
+    CloseBtnRadialMob();
 
 }
 // Function to crate pie chart for area development
@@ -1311,19 +1294,19 @@ function renderPieChart() {
                     color: classificationColors.get(name),
                     count
                 }));
-                const layerInfoView = document.getElementById('layerInfoViewFranchise');
-                const existingCanvas = layerInfoView.querySelector('canvas');
-                const existingRecords = layerInfoView.querySelector('.records-count');
+                const layerInfoViewMob = document.getElementById('layerInfoViewMob');
+                const existingCanvas = layerInfoViewMob.querySelector('canvas');
+                const existingRecords = layerInfoViewMob.querySelector('.records-count');
                 if (existingCanvas) existingCanvas.remove();
                 if (existingRecords) existingRecords.remove();
                 const totalRecords = classifications.reduce((sum, item) => sum + item.count, 0);
                 const recordsDiv = document.createElement('div');
                 recordsDiv.className = 'records-count';
                 recordsDiv.textContent = `Total Records: ${totalRecords}`;
-                layerInfoView.appendChild(recordsDiv);
+                layerInfoViewMob.appendChild(recordsDiv);
                 const chartCanvas = document.createElement('canvas');
-                chartCanvas.id = 'classificationPieChart';
-                layerInfoView.appendChild(chartCanvas);
+                chartCanvas.id = 'classificationPieChartMob';
+                layerInfoViewMob.appendChild(chartCanvas);
                 const chartLabels = classifications.map(item => item.name);
                 const chartData = classifications.map(item => item.count);
                 const chartColors = classifications.map(item => item.color);
@@ -1376,7 +1359,7 @@ function renderPieChart() {
                     legendItem.appendChild(text);
                     legendDiv.appendChild(legendItem);
                 });
-                layerInfoView.appendChild(legendDiv);
+                layerInfoViewMob.appendChild(legendDiv);
             } else {
                 console.error('Error fetching saved regions:', response.message);
             }
@@ -1384,9 +1367,9 @@ function renderPieChart() {
     });
 }
 function populateTable() {
-    const tableBody = document.querySelector("#dataTable tbody");
+    const tableBody = document.querySelector("#dataTableMob tbody");
     tableBody.innerHTML = "";
-    const savedRegions = Array.from(selectedRegions.values());
+    const savedRegions = Array.from(selectedRegionsMob.values());
     const groupedRegions = {};
     savedRegions.forEach(region => {
         if (!groupedRegions[region.groupId]) {
@@ -1412,7 +1395,7 @@ function populateTable() {
         tableBody.appendChild(row);
     });
 }
-function exportToCSV() {
+function exportToCSVMob() {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Name,Unique Key,Classification\n";
     const savedRegions = JSON.parse(localStorage.getItem('selectedRegions')) || [];
@@ -1429,10 +1412,10 @@ function exportToCSV() {
 }
 function returnToMap() {
     document.getElementById("tableView").style.display = "none";
-    document.getElementById("map-container").style.display = "block";
+    document.getElementById("map").style.display = "block";
 }
 function initializeColorOptions() {
-    if (isAreaDevClicked) {
+    if (isAreaDevClickedMob) {
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
             let rgbValues;
@@ -1446,7 +1429,7 @@ function initializeColorOptions() {
             option.addEventListener('click', handleColorOptionClick);
         });
     }
-    if (isRecruitmentClicked) {
+    if (isRecruitmentClickedMob) {
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
             let rgbValues;
@@ -1470,7 +1453,7 @@ function handleColorOptionClick(e) {
     colorOption.classList.add('selected');
     selectedColor = colorOption.dataset.color;
 }
-function displayVisiblePlaceIds(bounds) {
+function displayVisiblePlaceIdsMob(bounds) {
     console.log("Adding postal numbers to map")
     featureLayer.style = (params) => {
         const feature = params.feature;
@@ -1494,7 +1477,7 @@ function displayVisiblePlaceIds(bounds) {
                 }
             });
         }
-        return applyStyle(params);
+        return applyStyleMob(params);
     };
 }
 function load_postal_data(data_list){
@@ -1585,7 +1568,7 @@ async function getDisplayName(feature, latLng) {
     return feature.name || `Feature ${feature.placeId}`;
 }
 function removePostalCodes() {
-    showPostalCodes = false;
+    showPostalCodesMob = false;
     labelOverlays.forEach(overlay => {
         if (overlay) {
             overlay.setMap(null);
@@ -1594,11 +1577,12 @@ function removePostalCodes() {
     labelOverlays = [];
     console.log("Postal codes removed from map");
 }
-function handleSubmit() {
-    newSelectedRegions = Array.from(selectedRegions.values()).filter(region => region.groupId === null);
-    console.log("Selected regions:", newSelectedRegions.length);
+function handleSubmitMob() {
+    newSelectedRegions = Array.from(selectedRegionsMob.values()).filter(region => region.groupId === null);
+    alert (`You have selected ${newSelectedRegions.length} regions`);
     if (newSelectedRegions.length > 0) {
-        document.getElementById("input-area").style.display = "block";
+        document.getElementById("input-area-mob").style.display = "block";
+        alert("Input areas displayed");
         document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
         document.querySelector('.color-option[data-color="white"]')?.classList.add('selected');
         selectedColor = document.querySelector('.color-option[data-color="white"]')?.dataset.color || 'white';
@@ -1606,44 +1590,44 @@ function handleSubmit() {
         console.log("No new regions selected. Please click on one or more regions before submitting.");
     }
 }
-function hide_demographic_table() {
-    var table = document.getElementById('demographic-table');
+function hide_demographic_tableMob() {
+    var table = document.getElementById('demographic-table-mob');
         if (table.style.display === 'block') {
             table.style.display = 'none';
-            var toggleButton = document.getElementById('toggle-demographic-btn');
-            toggleButton.textContent = 'Show Demographic Data';
+            // var toggleButton = document.getElementById('toggle-demographic-btn');
+            // toggleButton.textContent = 'Show Demographic Data';
         }
 }
-function handleSave() {
-    if (isAreaDevClicked && isRecruitmentClicked) {
+function handleSaveMob() {
+    if (isAreaDevClickedMob && isRecruitmentClickedMob) {
         if (isEditingArea) {
             handleAreaDevSave();
         } else if (isEditingAreaRecruit) {
             handleRecruitmentSave();
         } else {
-            const areaDevInput = document.getElementById('input-area');
-            const recruitmentInput = document.getElementById('input-area-recruitment');
+            const areaDevInput = document.getElementById('input-area-mob');
+            const recruitmentInput = document.getElementById('input-area-recruitment-mob');
             if (areaDevInput && areaDevInput.style.display === 'block') {
                 handleAreaDevSave();
             } else if (recruitmentInput && recruitmentInput.style.display === 'block') {
                 handleRecruitmentSave();
             }
         }
-    } else if (isAreaDevClicked) {
+    } else if (isAreaDevClickedMob) {
         handleAreaDevSave();
-    } else if (isRecruitmentClicked) {
+    } else if (isRecruitmentClickedMob) {
         handleRecruitmentSave();
     }
 }
 function handleAreaDevSave() {
-    localStorage.setItem('isAreaDevClicked', 'true');
-    localStorage.setItem('isRecruitmentClicked', 'false');
+    localStorage.setItem('isAreaDevClickedMob', 'true');
+    localStorage.setItem('isRecruitmentClickedMob', 'false');
     
-    const name = document.getElementById("area-name").value.trim();
-    const franchisee = document.getElementById("franchisee").value.trim();
-    const numDevelopments = parseInt(document.getElementById("num-developments").value.trim(), 10);
-    const zipCodes = document.getElementById("zip-codes").value.trim().split(',').map(zip => zip.trim());
-    const state = document.getElementById("state").value.trim();
+    const name = document.getElementById("area-name-mob").value.trim();
+    const franchisee = document.getElementById("franchiseeMob").value.trim();
+    const numDevelopments = parseInt(document.getElementById("num-developments-mob").value.trim(), 10);
+    const zipCodes = document.getElementById("zip-codes-mob").value.trim().split(',').map(zip => zip.trim());
+    const state = document.getElementById("state-mob").value.trim();
 
     if (!name) {
         alert("Please enter a name for the selected area.");
@@ -1659,11 +1643,11 @@ function handleAreaDevSave() {
     const displayName = prefix ? `${prefix} ${name}` : name;
 
     if (isEditingArea && editingGroupId !== null) {
-        const existingGroup = selectedRegionGroups.get(editingGroupId);
+        const existingGroup = selectedRegionGroupsMob.get(editingGroupId);
         if (existingGroup) {
             // First, remove old regions from the selectedRegions map
             existingGroup.regions.forEach(placeId => {
-                selectedRegions.delete(placeId);
+                selectedRegionsMob.delete(placeId);
             });
             const updatedGroup = {
                 groupId: editingGroupId,
@@ -1717,7 +1701,7 @@ function handleAreaDevSave() {
                                 coordinates: region.coordinates || [],
                                 demographics: selectedRegionsDemographics.get(region.placeId) || {}
                             };
-                            selectedRegions.set(region.placeId, updatedRegion);
+                            selectedRegionsMob.set(region.placeId, updatedRegion);
                         });
                         finishSave();
                     } else {
@@ -1732,9 +1716,9 @@ function handleAreaDevSave() {
         }
     } else {
         const newGroupId = currentGroupId++;
-        selectedRegions.forEach((region, placeId) => {
+        selectedRegionsMob.forEach((region, placeId) => {
             if (region.groupId === null) {
-                selectedRegions.delete(placeId);
+                selectedRegionsMob.delete(placeId);
             }
         });
         const newGroupData = {
@@ -1760,10 +1744,10 @@ function handleAreaDevSave() {
                 demographics: selectedRegionsDemographics.get(region.placeId) || {}
             };
             newGroupData.regions.push(region.placeId);
-            selectedRegions.set(region.placeId, updatedRegion);
+            selectedRegionsMob.set(region.placeId, updatedRegion);
         });
-        selectedRegionGroups.set(newGroupId, newGroupData);
-        const selectedRegionsArray = Array.from(selectedRegions.values()).filter(
+        selectedRegionGroupsMob.set(newGroupId, newGroupData);
+        const selectedRegionsArray = Array.from(selectedRegionsMob.values()).filter(
             region => region.groupId === newGroupId
         );
         const selectedRegionGroupsArray = [newGroupData];
@@ -1777,7 +1761,8 @@ function handleAreaDevSave() {
                 selectedRegionGroups: selectedRegionGroupsArray
             }),
             success: function(response) {
-                if (response.status === 'success') {
+                if (response.success) {
+                    console.log('Success');
                     finishSave();
                 } else {
                     console.error('Server error:', response);
@@ -1791,13 +1776,13 @@ function handleAreaDevSave() {
     }
 }
 function handleRecruitmentSave() {
-    localStorage.setItem('isAreaDevClicked', 'false');
-    localStorage.setItem('isRecruitmentClicked', 'true');
-    const name = document.getElementById("area-name-recruitment").value.trim();
-    const recruitmentArea = document.getElementById("recruitmentArea").value.trim();
-    const PotStoreCount = parseInt(document.getElementById("PotStoreCount").value.trim(), 10);
-    const zipCodesRecruitment = document.getElementById("zipCodesRecruitment").value.trim().split(',').map(zip => zip.trim());
-    const stateRecruitment = document.getElementById("stateRecruitment").value.trim();
+    localStorage.setItem('isAreaDevClickedMob', 'false');
+    localStorage.setItem('isRecruitmentClickedMob', 'true');
+    const name = document.getElementById("area-name-recruitment-mob").value.trim();
+    const recruitmentArea = document.getElementById("recruitmentAreaMob").value.trim();
+    const PotStoreCount = parseInt(document.getElementById("PotStoreCountMob").value.trim(), 10);
+    const zipCodesRecruitment = document.getElementById("zipCodesRecruitmentMob").value.trim().split(',').map(zip => zip.trim());
+    const stateRecruitment = document.getElementById("stateRecruitmentMob").value.trim();
     const selectedCategory = document.querySelector('input[name="category"]:checked')?.value || 'Primary Area';
     if (!name) {
         alert("Please enter a name for the selected area.");
@@ -1813,7 +1798,7 @@ function handleRecruitmentSave() {
         const existingGroup = selectedRegionGroupsRecruitment.get(editingGroupIdRecruit);
         if (existingGroup) {
             existingGroup.regions.forEach(placeId => {
-                selectedRegionsRecruitment.delete(placeId);
+                selectedRegionsRecruitmentMob.delete(placeId);
             });
             const updatedGroup = {
                 groupId: editingGroupIdRecruit,
@@ -1867,7 +1852,7 @@ function handleRecruitmentSave() {
                                 coordinates: region.coordinates || [],
                                 demographics: selectedRegionsRecruitmentDemographics.get(region.placeId) || {}
                             };
-                            selectedRegionsRecruitment.set(region.placeId, updatedRegion);
+                            selectedRegionsRecruitmentMob.set(region.placeId, updatedRegion);
                         });
                         finishSave();
                     } else {
@@ -1881,9 +1866,9 @@ function handleRecruitmentSave() {
         }
     } else {
         const newGroupIdRecruit = currentGroupIdRecruitment++
-        selectedRegionsRecruitment.forEach((region, placeId) => {
+        selectedRegionsRecruitmentMob.forEach((region, placeId) => {
             if (region.groupId === null) {
-                selectedRegionsRecruitment.delete(placeId);
+                selectedRegionsRecruitmentMob.delete(placeId);
             }
         });
         const newGroup = {
@@ -1910,10 +1895,10 @@ function handleRecruitmentSave() {
                 demographics: selectedRegionsRecruitmentDemographics.get(region.placeId) || {}
             };
             newGroup.regions.push(region.placeId);
-            selectedRegionsRecruitment.set(region.placeId, updatedRegionRec);
+            selectedRegionsRecruitmentMob.set(region.placeId, updatedRegionRec);
         });
         selectedRegionGroupsRecruitment.set(newGroup.id, newGroup);
-        const selectedRegionsArrayRec = Array.from(selectedRegionsRecruitment.values()).filter(
+        const selectedRegionsArrayRec = Array.from(selectedRegionsRecruitmentMob.values()).filter(
             region => region.groupId === newGroupIdRecruit
         );
         const selectedRegionGroupsArrayRec = [newGroup];
@@ -1922,12 +1907,12 @@ function handleRecruitmentSave() {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             data: JSON.stringify({ 
-                selectedRegionsRecruitment: selectedRegionsArrayRec, 
+                selectedRegionsRecruitmentMob: selectedRegionsArrayRec, 
                 selectedRegionGroupsRecruitment: selectedRegionGroupsArrayRec 
             }),
             success: function(response) {
-                
                 if (response.success) {
+                    console.log('Success');
                     finishSave();
                 } else {
                     console.log('Server response:', response);
@@ -1948,8 +1933,8 @@ function finishSave() {
     location.reload();
 }
 function resetUI() {
-    document.getElementById("input-area").style.display = "none";
-    document.getElementById("area-name").value = "";
+    document.getElementById("input-area-mob").style.display = "none";
+    document.getElementById("area-name-mob").value = "";
     selectedColor = 'grey';
     isEditingArea = false;
     editingGroupId = null;
@@ -1957,12 +1942,12 @@ function resetUI() {
     if (newSelectedRegions.length === 0) {
         selectedRegionsDemographics.clear();
         resetDemographicsTable();
-        document.getElementById('demographic-table').style.display = 'none';
+        document.getElementById('demographic-table-mob').style.display = 'none';
     }
 }
 function resetUIrecruitment() {
-    document.getElementById("input-area-recruitment").style.display = "none";
-    document.getElementById("area-name-recruitment").value = "";
+    document.getElementById("input-area-recruitment-mob").style.display = "none";
+    document.getElementById("area-name-recruitment-mob").value = "";
     selectedColorRecruitment = 'grey';
     isEditingAreaRecruit = false;
     editingGroupIdRecruit = null;
@@ -1970,11 +1955,11 @@ function resetUIrecruitment() {
     if (newSelectedRegionsRecruitment.length === 0) {
         selectedRegionsRecruitmentDemographics.clear();
         resetDemographicsTableRecruitment();
-        document.getElementById('demographic-table-recruitment').style.display = 'none';
+        document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
     }  
 }
 function resetDemographicsTable() {
-    const table = document.getElementById('demographicTable');
+    const table = document.getElementById('demographicTableMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     for (let row of rows) {
@@ -1982,7 +1967,7 @@ function resetDemographicsTable() {
         valueCell.textContent = '0';
     }
 }
-function initializePostalCodeOverlay() {
+function initializePostalCodeOverlayMob() {
     if (google && google.maps && google.maps.OverlayView) {
         class PostalCodeOverlay extends google.maps.OverlayView {
             constructor(position, postalCode, map) {
@@ -2040,9 +2025,9 @@ function addNewRegion(feature, latLng) {
                 if (response.success) {
                     selectedRegionsDemographics.set(placeId, response.data);
                     updateAccumulatedDemographics();
-                    document.getElementById('demographic-table').style.display = 'block';
-                    document.getElementById('demographic-table-recruitment').style.display = 'none';
-                    document.getElementById('demographic-table-radial').style.display = 'none';
+                    document.getElementById('demographic-table-mob').style.display = 'block';
+                    document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+                    document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 } else {
                     console.log("Could not find data for ZIP code: " + postalCode);
                 }
@@ -2051,7 +2036,7 @@ function addNewRegion(feature, latLng) {
                 console.log("Error fetching data. Please try again.");
             }
         });
-        selectedRegions.set(placeId, {
+        selectedRegionsMob.set(placeId, {
             displayName: displayName,
             placeId: placeId,
             featureType: feature.featureType,
@@ -2061,8 +2046,8 @@ function addNewRegion(feature, latLng) {
             color: null,
             postalCode: postalCode
         });
-        featureLayer.style = applyStyle;
-        updateLabels();
+        featureLayer.style = applyStyleMob;
+        updateLabelsMob();
     });
 }
 async function addNewRegionForEdit(feature, latLng) {
@@ -2081,9 +2066,9 @@ async function addNewRegionForEdit(feature, latLng) {
             if (response.success) {
                 selectedRegionsDemographics.set(placeId, response.data);
                 updateAccumulatedDemographics();
-                document.getElementById('demographic-table').style.display = 'block';
-                document.getElementById('demographic-table-recruitment').style.display = 'none';
-                document.getElementById('demographic-table-radial').style.display = 'none';
+                document.getElementById('demographic-table-mob').style.display = 'block';
+                document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+                document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 const newRegion = {
                     displayName: displayName,
                     placeId: placeId,
@@ -2094,10 +2079,10 @@ async function addNewRegionForEdit(feature, latLng) {
                     color: selectedColor,
                     postalCode: postalCode
                 };
-                selectedRegions.set(placeId, newRegion);
+                selectedRegionsMob.set(placeId, newRegion);
                 newSelectedRegions.push(newRegion);
-                featureLayer.style = applyStyle;
-                updateLabels();
+                featureLayer.style = applyStyleMob;
+                updateLabelsMob();
                 map.data.setStyle({visible: true});
             } else {
                 console.log("Could not find data for ZIP code: " + postalCode);
@@ -2110,30 +2095,30 @@ async function addNewRegionForEdit(feature, latLng) {
 }
 function cancelSelection() {
     const placeIdsToRemove = [];
-    selectedRegions.forEach((region, placeId) => {
+    selectedRegionsMob.forEach((region, placeId) => {
         if (region.groupId === null) {
             placeIdsToRemove.push(placeId);
         }
     });
     placeIdsToRemove.forEach(placeId => {
-        selectedRegions.delete(placeId);
+        selectedRegionsMob.delete(placeId);
         selectedRegionsDemographics.delete(placeId);
     });
-    document.getElementById('zip-codes').value = '';
+    document.getElementById('zip-codes-mob').value = '';
     if (selectedRegionsDemographics.size > 0) {
         updateAccumulatedDemographics();
-        document.getElementById('demographic-table').style.display = 'block';
-        document.getElementById('demographic-table-recruitment').style.display = 'none';
-        document.getElementById('demographic-table-radial').style.display = 'none';
+        document.getElementById('demographic-table-mob').style.display = 'block';
+        document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+        document.getElementById('demographic-table-radial-mob').style.display = 'none';
     } else {
         resetDemographicsTable();
-        document.getElementById('demographic-table').style.display = 'none';
+        document.getElementById('demographic-table-mob').style.display = 'none';
     }
     if (isEditingArea) {
         newSelectedRegions = [];
     }
-    featureLayer.style = createNewAreaStyle;
-    updateLabels();
+    featureLayer.style = createNewAreaStyleMob;
+    updateLabelsMob();
     isCreatingNewArea = true;
     console.log("Selection cancelled");
 }
@@ -2141,7 +2126,7 @@ function handleAreaDevClick(e) {
     const clickedFeature = e.features[0];
     if (!clickedFeature) return;
     const placeId = clickedFeature.placeId;
-    lastInteractedFeatureIds = [clickedFeature.placeId];
+    lastInteractedFeatureIdsMob = [clickedFeature.placeId];
     if (!placeId) return;
     if (isCreatingNewArea) {
         handleCreateNewAreaClick(clickedFeature, placeId, e.latLng);
@@ -2151,45 +2136,45 @@ function handleAreaDevClick(e) {
         const existingRegionIndex = newSelectedRegions.findIndex(r => r.placeId === placeId);
         if (existingRegionIndex > -1) {
             const postalCode = newSelectedRegions[existingRegionIndex].postalCode;
-            const zipCodeInput = document.getElementById('zip-codes');
+            const zipCodeInput = document.getElementById('zip-codes-mob');
             let currentZips = zipCodeInput.value.split(',').map(zip => zip.trim()).filter(zip => zip);
             currentZips = currentZips.filter(zip => zip !== postalCode);
             zipCodeInput.value = currentZips.join(', ');
             newSelectedRegions.splice(existingRegionIndex, 1);
             selectedRegionsDemographics.delete(placeId);
-            selectedRegions.delete(placeId);
+            selectedRegionsMob.delete(placeId);
             if (newSelectedRegions.length === 1) {
                 alert("Atleast one region is required for editing.")
             }
             if (selectedRegionsDemographics.size > 0) {
                 updateAccumulatedDemographics();
-                document.getElementById('demographic-table').style.display = 'block';
-                document.getElementById('demographic-table-recruitment').style.display = 'none';
-                document.getElementById('demographic-table-radial').style.display = 'none';
+                document.getElementById('demographic-table-mob').style.display = 'block';
+                document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+                document.getElementById('demographic-table-radial-mob').style.display = 'none';
             } else {
                 resetDemographicsTable();
-                document.getElementById('demographic-table').style.display = 'none';
+                document.getElementById('demographic-table-mob').style.display = 'none';
             }
-            featureLayer.style = (feature) => applyStyle(feature);
-            updateLabels();
+            featureLayer.style = (feature) => applyStyleMob(feature);
+            updateLabelsMob();
             map.data.setStyle({visible: true});
         } else {
             addNewRegionForEdit(clickedFeature, e.latLng);
         }
     } else {
-        const clickedRegion = selectedRegions.get(placeId);
+        const clickedRegion = selectedRegionsMob.get(placeId);
         if (clickedRegion) {
             if (clickedRegion.groupId === null) {
-                selectedRegions.delete(placeId);
+                selectedRegionsMob.delete(placeId);
                 selectedRegionsDemographics.delete(placeId);
                 if (selectedRegionsDemographics.size > 0) {
                     updateAccumulatedDemographics();
-                    document.getElementById('demographic-table').style.display = 'block';
-                    document.getElementById('demographic-table-recruitment').style.display = 'none';
-                    document.getElementById('demographic-table-radial').style.display = 'none';
+                    document.getElementById('demographic-table-mob').style.display = 'block';
+                    document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+                    document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 } else {
                     resetDemographicsTable();
-                    document.getElementById('demographic-table').style.display = 'none';
+                    document.getElementById('demographic-table-mob').style.display = 'none';
                 }
             } else {
                 const groupIdarea = clickedRegion.groupId;
@@ -2197,17 +2182,17 @@ function handleAreaDevClick(e) {
                 if (grouparea) {
                     if (selectedGroupForDeletion === groupIdarea) {
                         selectedGroupForDeletion = null;
-                        document.getElementById('demographic-table').style.display = 'none';
+                        document.getElementById('demographic-table-mob').style.display = 'none';
                     } else {
                         selectedGroupForDeletion = groupIdarea;
-                        displayGroupDemographics(grouparea.demographics);
-                        document.getElementById('demographic-table').style.display = 'block';
-                        document.getElementById('demographic-table-recruitment').style.display = 'none';
-                        document.getElementById('demographic-table-radial').style.display = 'none';
-                        document.getElementById('ActionBtn').style.display = "block";
-                        document.getElementById('CloseBtn').style.display = "block";
-                        actionBtn();
-                        closeBtn();
+                        displayGroupDemographicsMob(grouparea.demographics);
+                        document.getElementById('demographic-table-mob').style.display = 'block';
+                        document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+                        document.getElementById('demographic-table-radial-mob').style.display = 'none';
+                        document.getElementById('ActionBtnMob').style.display = "block";
+                        document.getElementById('CloseBtnMob').style.display = "block";
+                        ActionBtnMob();
+                        CloseBtnMob();
                         GoBackToTableFranchise();
                     }
                     highlightSelectedGroup(groupIdarea);
@@ -2218,9 +2203,9 @@ function handleAreaDevClick(e) {
             addNewRegion(clickedFeature, e.latLng);
         }
     }
-    lastInteractedFeatureIds = [];
-    featureLayer.style = applyStyle;
-    updateLabels();
+    lastInteractedFeatureIdsMob = [];
+    featureLayer.style = applyStyleMob;
+    updateLabelsMob();
 }
 function handleRecruitmentClick(e) {
     const clickedFeatureRecruit = e.features[0];
@@ -2235,47 +2220,47 @@ function handleRecruitmentClick(e) {
         const existingRegionIndexRec = newSelectedRegionsRecruitment.findIndex(r => r.placeId === placeId);
         if (existingRegionIndexRec > -1) {
             const postalCode = newSelectedRegionsRecruitment[existingRegionIndexRec].postalCode;
-            const zipCodeInputRec = document.getElementById('zipCodesRecruitment');
+            const zipCodeInputRec = document.getElementById('zipCodesRecruitmentMob');
             let currentZipsRec = zipCodeInputRec.value.split(',').map(zip => zip.trim()).filter(zip => zip);
             currentZipsRec = currentZipsRec.filter(zip => zip !== postalCode);
             zipCodeInputRec.value = currentZipsRec.join(', ');
 
             newSelectedRegionsRecruitment.splice(existingRegionIndexRec, 1);
             selectedRegionsRecruitmentDemographics.delete(placeId);
-            selectedRegionsRecruitment.delete(placeId);
+            selectedRegionsRecruitmentMob.delete(placeId);
             if (newSelectedRegionsRecruitment.length === 1) {
                 alert("At least one region is required for editing.");
             }
             if (selectedRegionsRecruitmentDemographics.size > 0) {
                 updateAccumulatedDemographicsRecruitment();
-                document.getElementById('demographic-table-recruitment').style.display = 'block';
-                document.getElementById('demographic-table').style.display = 'none';
-                document.getElementById('demographic-table-radial').style.display = 'none';
+                document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
+                document.getElementById('demographic-table-mob').style.display = 'none';
+                document.getElementById('demographic-table-radial-mob').style.display = 'none';
             } else {
                 resetDemographicsTableRecruitment();
-                document.getElementById('demographic-table-recruitment').style.display = 'none';
+                document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
             }
-            featureLayer.style = (feature) => applyStyle(feature);
-            updateLabels();
+            featureLayer.style = (feature) => applyStyleMob(feature);
+            updateLabelsMob();
             map.data.setStyle({visible: true});
         } else {
             addNewRegionForEditRecruitment(clickedFeatureRecruit, e.latLng);
         }
     } else {
-        const clickedRegionRecruit = selectedRegionsRecruitment.get(placeId);
+        const clickedRegionRecruit = selectedRegionsRecruitmentMob.get(placeId);
         if (clickedRegionRecruit) {
             if (clickedRegionRecruit.groupId === null) {
-                selectedRegionsRecruitment.delete(placeId);
+                selectedRegionsRecruitmentMob.delete(placeId);
                 selectedRegionsRecruitmentDemographics.delete(placeId);
 
                 if (selectedRegionsRecruitmentDemographics.size > 0) {
                     updateAccumulatedDemographicsRecruitment();
-                    document.getElementById('demographic-table-recruitment').style.display = 'block';
-                    document.getElementById('demographic-table').style.display = 'none';
-                        document.getElementById('demographic-table-radial').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
+                    document.getElementById('demographic-table-mob').style.display = 'none';
+                        document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 } else {
                     resetDemographicsTableRecruitment();
-                    document.getElementById('demographic-table-recruitment').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
                 }
             } else {
                 const groupIdRecruit = clickedRegionRecruit.groupId;
@@ -2284,18 +2269,18 @@ function handleRecruitmentClick(e) {
                 if (groupRec) {
                     if (selectedGroupForDeletionRecruitment === groupIdRecruit) {
                         selectedGroupForDeletionRecruitment = null;
-                        document.getElementById('demographic-table-recruitment').style.display = 'none';
+                        document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
                     } else {
                         selectedGroupForDeletionRecruitment = groupIdRecruit;
                         displayGroupDemographicsRecruitment(groupRec.demographicsRec);
-                        document.getElementById('demographic-table-recruitment').style.display = 'block';
-                        document.getElementById('demographic-table').style.display = 'none';
-                        document.getElementById('demographic-table-radial').style.display = 'none';
-                        document.getElementById('ActionBtnRecruitment').style.display = "block";
-                        document.getElementById('CloseBtnRecruitment').style.display = "block";
-                        document.getElementById('submit-btn-recruitment').style.display = "none";
-                        actionBtnRecruitment();
-                        closeBtnRecruitment();
+                        document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
+                        document.getElementById('demographic-table-mob').style.display = 'none';
+                        document.getElementById('demographic-table-radial-mob').style.display = 'none';
+                        document.getElementById('ActionBtnRecruitmentMob').style.display = "block";
+                        document.getElementById('CloseBtnRecruitmentMob').style.display = "block";
+                        document.getElementById('submit-btn-recruitment-mob').style.display = "none";
+                        ActionBtnRecruitmentMob();
+                        CloseBtnRecruitmentMob();
                         GoBackToTableRecruitment();
                     }
                     highlightSelectedGroupRecruitment(groupIdRecruit);
@@ -2306,9 +2291,9 @@ function handleRecruitmentClick(e) {
             addNewRegionRecruitment(clickedFeatureRecruit, e.latLng);
         }
     }
-    lastInteractedFeatureIds = [];
-    featureLayer.style = applyStyle;
-    updateLabels();
+    lastInteractedFeatureIdsMob = [];
+    featureLayer.style = applyStyleMob;
+    updateLabelsMob();
 }
 
 function handleBothClicks(e) {
@@ -2329,21 +2314,21 @@ function handleBothClicks(e) {
         if (selectedGroupForDeletion) {
             resetGroupHighlight(selectedGroupForDeletion);
             selectedGroupForDeletion = null;
-            document.getElementById('demographic-table').style.display = 'none';
-            document.getElementById('ActionBtn').style.display = "none";
-            document.getElementById('CloseBtn').style.display = "none";
+            document.getElementById('demographic-table-mob').style.display = 'none';
+            document.getElementById('ActionBtnMob').style.display = "none";
+            document.getElementById('CloseBtnMob').style.display = "none";
         }
         // Reset Recruitment selection if it exists
         if (selectedGroupForDeletionRecruitment) {
             resetGroupHighlight(selectedGroupForDeletionRecruitment);
             selectedGroupForDeletionRecruitment = null;
-            document.getElementById('demographic-table-recruitment').style.display = 'none';
-            document.getElementById('ActionBtnRecruitment').style.display = "none";
-            document.getElementById('CloseBtnRecruitment').style.display = "none";
+            document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
+            document.getElementById('ActionBtnRecruitmentMob').style.display = "none";
+            document.getElementById('CloseBtnRecruitmentMob').style.display = "none";
         }
     }
-    const regionsEntries = Array.from(selectedRegions);
-    const recruitmentEntries = Array.from(selectedRegionsRecruitment);
+    const regionsEntries = Array.from(selectedRegionsMob);
+    const recruitmentEntries = Array.from(selectedRegionsRecruitmentMob);
     const isRecruitmentRegion = (targetPlaceId) => {
         for (const [key, value] of recruitmentEntries) {
             if (key === targetPlaceId && value.groupId !== null) {
@@ -2365,50 +2350,50 @@ function handleBothClicks(e) {
     } else if (isAreaDevRegion(placeIdBoth)) {
         handleAreaDevClick(e);
     } else {
-        const userChoice = document.getElementById('franchiseView').style.display !== 'none';
+        const userChoice = document.getElementById('franchiseViewMob').style.display !== 'none';
         if (userChoice) {
             handleAreaDevClick(e);
         } else {
             handleRecruitmentClick(e);
         }
     }
-    lastInteractedFeatureIds = [];
-    featureLayer.style = applyStyle;
-    updateLabels();
+    lastInteractedFeatureIdsMob = [];
+    featureLayer.style = applyStyleMob;
+    updateLabelsMob();
 }
-function handleClick(e) {
-    if (isAreaDevClicked && isRecruitmentClicked) {
+function handleClickMob(e) {
+    if (isAreaDevClickedMob && isRecruitmentClickedMob) {
         handleBothClicks(e);
-    } else if (isAreaDevClicked) {
+    } else if (isAreaDevClickedMob) {
         handleAreaDevClick(e);
-    } else if (isRecruitmentClicked) {
+    } else if (isRecruitmentClickedMob) {
         handleRecruitmentClick(e);
     }
 }
 function handleCreateNewAreaClick(clickedFeature, placeId, latLng) {
-    const existingRegion = selectedRegions.get(placeId);
+    const existingRegion = selectedRegionsMob.get(placeId);
     if (existingRegion && existingRegion.groupId === null) {
         const postalCode = existingRegion.postalCode;
         updateZipCodeInput(postalCode, 'remove');
-        selectedRegions.delete(placeId);
+        selectedRegionsMob.delete(placeId);
         selectedRegionsDemographics.delete(placeId);
         if (selectedRegionsDemographics.size > 0) {
             updateAccumulatedDemographics();
-            document.getElementById('demographic-table').style.display = 'block';
+            document.getElementById('demographic-table-mob').style.display = 'block';
         } else {
             resetDemographicsTable();
-            document.getElementById('demographic-table').style.display = 'none';
+            document.getElementById('demographic-table-mob').style.display = 'none';
         }
     } else if (!existingRegion) {
         addNewRegion(clickedFeature, latLng);
         updateAccumulatedDemographics();
-        document.getElementById('demographic-table').style.display = 'block';
+        document.getElementById('demographic-table-mob').style.display = 'block';
     }
-    lastInteractedFeatureIds = [];
-    featureLayer.style = createNewAreaStyle;
+    lastInteractedFeatureIdsMob = [];
+    featureLayer.style = createNewAreaStyleMob;
 }
 function updateZipCodeInput(postalCode, action) {
-    const zipCodeInput = document.getElementById('zip-codes');
+    const zipCodeInput = document.getElementById('zip-codes-mob');
     let zipCodes = zipCodeInput.value ? zipCodeInput.value.split(',').map(zip => zip.trim()).filter(zip => zip) : [];
     if (action === 'add' && !zipCodes.includes(postalCode)) {
         zipCodes.push(postalCode);
@@ -2418,7 +2403,7 @@ function updateZipCodeInput(postalCode, action) {
     zipCodeInput.value = zipCodes.join(', ');
 }
 function updateZipCodeInputRecruitment(postalCode, action) {
-    const zipCodeInput = document.getElementById('zipCodesRecruitment');
+    const zipCodeInput = document.getElementById('zipCodesRecruitmentMob');
     let zipCodes = zipCodeInput.value ? zipCodeInput.value.split(',').map(zip => zip.trim()).filter(zip => zip) : [];
     if (action === 'add' && !zipCodes.includes(postalCode)) {
         zipCodes.push(postalCode);
@@ -2428,7 +2413,7 @@ function updateZipCodeInputRecruitment(postalCode, action) {
     zipCodeInput.value = zipCodes.join(', ');
 }
 function updateStateInput(stateName) {
-    const stateInput = document.getElementById('state');
+    const stateInput = document.getElementById('state-mob');
     let states = stateInput.value.split(',').map(state => state.trim()).filter(state => state);
     if (!states.includes(stateName)) {
         states.push(stateName);
@@ -2436,7 +2421,7 @@ function updateStateInput(stateName) {
     stateInput.value = states.join(', ');
 }
 function updateStateInputRec(stateName) {
-    const stateInput = document.getElementById('stateRecruitment');
+    const stateInput = document.getElementById('stateRecruitmentMob');
     let states = stateInput.value.split(',').map(state => state.trim()).filter(state => state);
     
     if (!states.includes(stateName)) {
@@ -2445,8 +2430,8 @@ function updateStateInputRec(stateName) {
     stateInput.value = states.join(', ');
 }
 function updateStateInputRadial(stateName,cityName) {
-    const stateInput = document.getElementById('state-radial');
-    const cityInput = document.getElementById('city-radial');
+    const stateInput = document.getElementById('state-radial-mob');
+    const cityInput = document.getElementById('city-radial-mob');
     let states = stateInput.value.split(',').map(state => state.trim()).filter(state => state);
     let cities =  cityInput.value.split(',').map(city => city.trim()).filter(city => city);
     if (!states.includes(stateName)) {
@@ -2520,27 +2505,27 @@ function add_state_raial(postalCode){
     });    
 }
 function handleCreateNewAreaRecruitmentClick(clickedFeature, placeId, latLng) {
-    const existingRegionRecruit = selectedRegionsRecruitment.get(placeId);
+    const existingRegionRecruit = selectedRegionsRecruitmentMob.get(placeId);
     if (existingRegionRecruit && existingRegionRecruit.groupId === null) {
         const postalCode = existingRegionRecruit.postalCode;
         updateZipCodeInputRecruitment(postalCode, 'remove');
-        selectedRegionsRecruitment.delete(placeId);
+        selectedRegionsRecruitmentMob.delete(placeId);
         selectedRegionsRecruitmentDemographics.delete(placeId);
         
         if (selectedRegionsRecruitmentDemographics.size > 0) {
             updateAccumulatedDemographicsRecruitment();
-            document.getElementById('demographic-table-recruitment').style.display = 'block';
+            document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
         } else {
             resetDemographicsTableRecruitment();
-            document.getElementById('demographic-table-recruitment').style.display = 'none';
+            document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
         }
     } else if (!existingRegionRecruit) {
         addNewRegionRecruitment(clickedFeature, latLng);
         updateAccumulatedDemographicsRecruitment();
-        document.getElementById('demographic-table-recruitment').style.display = 'block';
+        document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
     }
-    lastInteractedFeatureIds = [];
-    featureLayer.style = createNewAreaStyle;
+    lastInteractedFeatureIdsMob = [];
+    featureLayer.style = createNewAreaStyleMob;
 }
 function cancelRecruitmentSelection() {
     // Clear only unsaved/newly selected recruitment regions
@@ -2548,7 +2533,7 @@ function cancelRecruitmentSelection() {
     
     // Create an array of placeIds to remove
     const placeIdsToRemove = [];
-    selectedRegionsRecruitment.forEach((region, placeId) => {
+    selectedRegionsRecruitmentMob.forEach((region, placeId) => {
         if (region.groupId === null) {
             placeIdsToRemove.push(placeId);
         }
@@ -2556,12 +2541,12 @@ function cancelRecruitmentSelection() {
     
     // Remove each region
     placeIdsToRemove.forEach(placeId => {
-        selectedRegionsRecruitment.delete(placeId);
+        selectedRegionsRecruitmentMob.delete(placeId);
         selectedRegionsRecruitmentDemographics.delete(placeId);
     });
     
     // Check if the zip codes input for recruitment exists before trying to clear it
-    const zipCodesRecruitment = document.getElementById('zipCodesRecruitment');
+    const zipCodesRecruitment = document.getElementById('zipCodesRecruitmentMob');
     if (zipCodesRecruitment) {
         zipCodesRecruitment.value = '';
     }
@@ -2569,15 +2554,15 @@ function cancelRecruitmentSelection() {
     // Reset demographics if needed
     if (selectedRegionsRecruitmentDemographics.size > 0) {
         updateAccumulatedDemographicsRecruitment();
-        document.getElementById('demographic-table-recruitment').style.display = 'block';
+        document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
     } else {
         resetDemographicsTableRecruitment();
-        document.getElementById('demographic-table-recruitment').style.display = 'none';
+        document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
     }
     
     // Update the map styling
-    featureLayer.style = createNewAreaStyle;
-    updateLabels();
+    featureLayer.style = createNewAreaStyleMob;
+    updateLabelsMob();
     
     // Reset any creation mode flags if needed
     isCreatingNewAreaRecruitment = true;
@@ -2588,10 +2573,10 @@ function updateRegionAppearance(groupId) {
     const group = selectedRegionGroups.get(groupId);
     if (group && group.regions) {
         group.regions.forEach(placeId => {
-            const region = selectedRegions.get(placeId);
+            const region = selectedRegionsMob.get(placeId);
             if (region) {
                 // Update only the selected regions' appearance
-                featureLayer.style = createApplyStyle({
+                featureLayer.style = createApplyStyleMob({
                     strokeColor: "#000000",
                     strokeOpacity: 1.0,
                     strokeWeight: 1.0,
@@ -2606,10 +2591,10 @@ function updateRegionAppearanceRecruitment(groupId) {
     const group = selectedRegionGroupsRecruitment.get(groupId);
     if (group && group.regions) {
         group.regions.forEach(placeId => {
-            const region = selectedRegionsRecruitment.get(placeId);
+            const region = selectedRegionsRecruitmentMob.get(placeId);
             if (region) {
                 // Update only the selected regions' appearance
-                featureLayer.style = createApplyStyle({
+                featureLayer.style = createApplyStyleMob({
                     strokeColor: "#000000",
                     strokeOpacity: 1.0,
                     strokeWeight: 1.0,
@@ -2657,7 +2642,7 @@ function calculateAccumulatedDemographics() {
 }
 function updateAccumulatedDemographics() {
     const accumulatedData = calculateAccumulatedDemographics();
-    const table = document.getElementById('demographicTable');
+    const table = document.getElementById('demographicTableMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
@@ -2707,11 +2692,10 @@ function updateAccumulatedDemographics() {
     }
 }
 function highlightSelectedGroup() {
-    featureLayer.style = applyStyle;
-    updateLabels();
+    featureLayer.style = applyStyleMob;
+    updateLabelsMob();
 }
-function handleDelete() {
-    if (document.getElementById("confirmDeleteButton")) {
+function handleDeleteMob() {
     document.getElementById("confirmDeleteButton").addEventListener("click", () => {
         if (selectedGroupForDeletion !== null) {
             const groupToDelete = selectedRegionGroups.get(selectedGroupForDeletion);
@@ -2724,15 +2708,15 @@ function handleDelete() {
                     success: function(response) {
                         if (response.status === 'success') {
                             groupToDelete.regions.forEach(placeId => {
-                                selectedRegions.delete(placeId);
+                                selectedRegionsMob.delete(placeId);
                             });
                             selectedRegionGroups.delete(selectedGroupForDeletion);
                             selectedGroupForDeletion = null;
                             resetDemographicsTable();
-                            featureLayer.style = applyStyle;
-                            updateLabels();
-                            document.getElementById("demographic-table").style.display = "none";
-                            document.getElementById("franchiseViewRight").style.display = "none";
+                            featureLayer.style = applyStyleMob;
+                            updateLabelsMob();
+                            document.getElementById("demographic-table-mob").style.display = "none";
+                            document.getElementById("franchiseViewRightMob").style.display = "none";
                         } else {
                             console.error(response.message);
                         }
@@ -2748,21 +2732,19 @@ function handleDelete() {
         $('#delet-area').modal('hide');
     });
 }
-}
-function initializeEventListeners() {
-    // setupMapClickListener();
-    if (isAreaDevClicked) {
-        document.getElementById("DeleteLayerButton").addEventListener("click", () => {
-            console.log("selectedGroupForDeletion", selectedGroupForDeletion);
+function initializeEventListenersMob() {
+    setupMapClickListenerMob();
+    if (isAreaDevClickedMob) {
+        document.getElementById("DeleteLayerButtonFranchiseMob").addEventListener("click", () => {
             if (selectedGroupForDeletion !== null) {
                 $('#delet-area').modal('show');
-                handleDelete();
+                handleDeleteMob();
             } else {
                 console.log("No group selected for deletion. Please click on a named region before deleting.");
             }
         });
-        document.getElementById("save-btn")?.addEventListener("click", handleSave);
-        document.getElementById("cancel-btn").addEventListener("click", cancelSelection);
+        document.getElementById("save-btn-mob")?.addEventListener("click", handleSaveMob);
+        document.getElementById("cancel-btn-mob").addEventListener("click", cancelSelection);
         document.querySelectorAll('.action-btn').forEach(button => {
             if (button.textContent.trim() === 'Edit label content') {
                 button.addEventListener('click', () => {
@@ -2770,11 +2752,11 @@ function initializeEventListeners() {
                 });
             }
         });
-        document.getElementById("editAreaBoundry")?.addEventListener("click", handleEditArea);
+        document.getElementById("editAreaBoundryMob")?.addEventListener("click", handleEditAreaMob);
         // document.getElementById('saveLabelChanges').addEventListener('click', function() {
         //     prefix = document.getElementById('prefixInput').value.trim();
         //     $('#editLabelModal').modal('hide');
-        //     updateLabels();
+        //     updateLabelsMob();
         // });
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
@@ -2794,17 +2776,16 @@ function initializeEventListeners() {
             });
         });
     }
-    if (isRecruitmentClicked) {
-        document.getElementById("DeleteLayerButtonRecruitment").addEventListener("click", () => {
-            console.log("selectedGroupForDeletion Recruitment", selectedGroupForDeletionRecruitment);
+    if (isRecruitmentClickedMob) {
+        document.getElementById("DeleteLayerButtonRecruitmentMob").addEventListener("click", () => {
             if (selectedGroupForDeletionRecruitment !== null) {
                 $('#delet-area').modal('show');
             } else {
                 console.log("No group selected for deletion. Please click on a named region before deleting.");
             }
         });
-        document.getElementById("cancel-btn-rec").addEventListener("click", cancelRecruitmentSelection);
-        document.getElementById("save-btn-recruitment")?.addEventListener("click", handleSave);
+        document.getElementById("cancel-btn-rec-mob").addEventListener("click", cancelRecruitmentSelection);
+        document.getElementById("save-btn-recruitment-mob")?.addEventListener("click", handleSaveMob);
         document.querySelectorAll('.action-btn').forEach(button => {
             if (button.textContent.trim() === 'Edit label content') {
                 button.addEventListener('click', () => {
@@ -2812,11 +2793,11 @@ function initializeEventListeners() {
                 });
             }
         });
-        document.getElementById("editAreaBoundryRecruitment")?.addEventListener("click", handleEditAreaRecruitment);
+        document.getElementById("editAreaBoundryRecruitmentMob")?.addEventListener("click", handleEditAreaRecruitmentMob);
         // document.getElementById('saveLabelChanges').addEventListener('click', function() {
         //     prefixRecruitment = document.getElementById('prefixInput').value.trim();
         //     $('#editLabelModal').modal('hide');
-        //     updateLabels();
+        //     updateLabelsMob();
         // });
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
@@ -2852,22 +2833,22 @@ function initializeEventListeners() {
         });
     }
 }
-function handleEditArea() {
+function handleEditAreaMob() {
     const loader = document.getElementById("loader-wrapper");
-    const franchiseViewRight = document.getElementById("franchiseViewRight");
-    const demographicTable = document.getElementById('demographic-table');
-    const inputArea = document.getElementById("input-area");
-    const areaName = document.getElementById("area-name");
-    const franchisee = document.getElementById("franchisee");
-    const NumberOfDev = document.getElementById("num-developments");
-    const zipCodeInput = document.getElementById("zip-codes");
-    const stateInput = document.getElementById("state");
+    const franchiseViewRightMob = document.getElementById("franchiseViewRightMob");
+    const demographicTable = document.getElementById('demographic-table-mob');
+    const inputArea = document.getElementById("input-area-mob");
+    const areaName = document.getElementById("area-name-mob");
+    const franchisee = document.getElementById("franchiseeMob");
+    const NumberOfDev = document.getElementById("num-developments-mob");
+    const zipCodeInput = document.getElementById("zip-codes-mob");
+    const stateInput = document.getElementById("state-mob");
     zipCodeInput.value = "";
     stateInput.value = "";
     franchisee.value = "";
     NumberOfDev.value = "";
     loader.style.display = "block";
-    franchiseViewRight.style.display = "none";
+    franchiseViewRightMob.style.display = "none";
     demographicTable.style.display = 'none';
 
     if (selectedGroupForDeletion === null) {
@@ -2891,11 +2872,11 @@ function handleEditArea() {
     document.querySelectorAll('.color-option').forEach(option => {
         option.classList.toggle('selected', option.dataset.color === selectedColor);
     });    
-    featureLayer.style = applyStyle;
+    featureLayer.style = applyStyleMob;
     const uniqueStates = new Set();
 
     const fetchPromises = groupToEdit.regions.map(placeId => {
-        const region = selectedRegions.get(placeId);
+        const region = selectedRegionsMob.get(placeId);
         if (!region) return Promise.resolve();
         const clonedRegion = JSON.parse(JSON.stringify(region));
         newSelectedRegions.push(clonedRegion);
@@ -2947,8 +2928,8 @@ function handleEditArea() {
             areaName.value = groupToEdit.name;
             franchisee.value = groupToEdit.franchisee;
             NumberOfDev.value = groupToEdit.numDevelopments
-            featureLayer.style = applyStyle;
-            updateLabels();
+            featureLayer.style = applyStyleMob;
+            updateLabelsMob();
             map.data.setStyle({visible: true});
         })
         .catch(error => {
@@ -2956,7 +2937,7 @@ function handleEditArea() {
         })
         .finally(() => {
             if (map && map.data) {
-                map.data.setStyle(applyStyle);
+                map.data.setStyle(applyStyleMob);
             }
             loader.style.display = "none";
         });
@@ -2984,22 +2965,22 @@ const styleMouseMove = {
 };
 function toggleClassificationColors(button) {
     areColorsVisible = !areColorsVisible;
-    featureLayer.style = applyStyle;
+    featureLayer.style = applyStyleMob;
     button.textContent = areColorsVisible ? "Hide classification colours" : "Show classification colours";
 }
 function toggleClassificationColorsRecruitment(button) {
     areColorsVisibleRecruitment = !areColorsVisibleRecruitment;
-    featureLayer.style = applyStyle;
+    featureLayer.style = applyStyleMob;
     button.textContent = areColorsVisibleRecruitment ? "Hide classification colours" : "Show classification colours";
 }
-function createApplyStyle(defaultStyle) {
+function createApplyStyleMob(defaultStyle) {
     return function applyStylemap(params) {
         if (!areColorsVisible) {
             return defaultStyle;
         }
         const placeId = params.feature.placeId;
-        const region = selectedRegions.get(placeId);
-        const regionRecruit = selectedRegionsRecruitment.get(placeId);
+        const region = selectedRegionsMob.get(placeId);
+        const regionRecruit = selectedRegionsRecruitmentMob.get(placeId);
         if (isEditingArea) {
             if (region && region.groupId === editingGroupId) {
                 return {
@@ -3098,18 +3079,18 @@ function createApplyStyle(defaultStyle) {
                 };
             }
         } 
-        if (lastInteractedFeatureIds.includes(placeId)) {
+        if (lastInteractedFeatureIdsMob.includes(placeId)) {
             return styleMouseMove;
         }
         return defaultStyle;
     };
 }
 
-function createNewAreaStyle(params) {
+function createNewAreaStyleMob(params) {
     const placeId = params.feature.placeId;
     // Check area development regions
-    if (isAreaDevClicked) {
-        const region = selectedRegions.get(placeId);
+    if (isAreaDevClickedMob) {
+        const region = selectedRegionsMob.get(placeId);
         if (region) {
             if (region.groupId === null) {
                 // Selected but not yet grouped region
@@ -3133,8 +3114,8 @@ function createNewAreaStyle(params) {
         }
     }
     // Check recruitment regions
-    if (isRecruitmentClicked) {
-        const regionRecruit = selectedRegionsRecruitment.get(placeId);
+    if (isRecruitmentClickedMob) {
+        const regionRecruit = selectedRegionsRecruitmentMob.get(placeId);
         if (regionRecruit) {
             if (regionRecruit.groupId === null) {
                 // Selected but not yet grouped region
@@ -3166,17 +3147,17 @@ function createNewAreaStyle(params) {
         fillOpacity: 0.1
     };
 }
-function applyStyle(params) {
+function applyStyleMob(params) {
     if (isCreatingNewArea || isCreatingNewAreaRecruitment) {
-        return createNewAreaStyle(params);
+        return createNewAreaStyleMob(params);
     }
     const placeId = params.feature.placeId;
     let region = null;
     let regionRecruit = null;
     let isSelected = false;
 
-    if (isAreaDevClicked) {
-        region = selectedRegions.get(placeId);
+    if (isAreaDevClickedMob) {
+        region = selectedRegionsMob.get(placeId);
         isSelected = region !== undefined;
         if (isEditingArea) {
             return getEditModeStyle(region, placeId);
@@ -3186,8 +3167,8 @@ function applyStyle(params) {
             return getSelectedRegionStyle(region);
         }
     }
-    if (isRecruitmentClicked) {
-        regionRecruit = selectedRegionsRecruitment.get(placeId);
+    if (isRecruitmentClickedMob) {
+        regionRecruit = selectedRegionsRecruitmentMob.get(placeId);
         isSelected = regionRecruit !== undefined;
         if (isEditingAreaRecruit) {
             return getEditModeStyleRecruitment(regionRecruit, placeId);
@@ -3297,31 +3278,31 @@ function getSelectedRegionStyleRecruitment(region) {
     };
 }
 function initializeCreateNewAreaButtons() {
-    const createNewAreaBtn = document.getElementById("createNewAreaBtn");
-    if (createNewAreaBtn) {
-        createNewAreaBtn.addEventListener("click", async function() {
+    const createNewAreaBtnMob = document.getElementById("createNewAreaBtnMob");
+    if (createNewAreaBtnMob) {
+        createNewAreaBtnMob.addEventListener("click", async function() {
             isCreatingNewArea = true;
             isCreatingNewAreaRecruitment = false;
-            await initCustomMap();
+            await initCustomMapMob();
             
-            var table = document.getElementById('demographic-table');
+            var table = document.getElementById('demographic-table-mob');
             if (table.style.display === 'none' || table.style.display === '') {
                 table.style.display = 'block';
-                this.textContent = 'Hide Demographic Data';
+                // this.textContent = 'Hide Demographic Data';
             } else {
                 table.style.display = 'none';
-                this.textContent = 'Show Demographic Data';
+                // this.textContent = 'Show Demographic Data';
             }
         });
     }
-    const createNewAreaBtnRecruitment = document.getElementById("createNewAreaBtnRecruitment");
-    if (createNewAreaBtnRecruitment) {
-        createNewAreaBtnRecruitment.addEventListener("click", async function() {
+    const createNewAreaBtnRecruitmentMob = document.getElementById("createNewAreaBtnRecruitmentMob");
+    if (createNewAreaBtnRecruitmentMob) {
+        createNewAreaBtnRecruitmentMob.addEventListener("click", async function() {
             isCreatingNewArea = false;
             isCreatingNewAreaRecruitment = true;
-            await initCustomMap();
+            await initCustomMapMob();
             
-            var table = document.getElementById('demographic-table-recruitment');
+            var table = document.getElementById('demographic-table-recruitment-mob');
             if (table.style.display === 'none' || table.style.display === '') {
                 table.style.display = 'block';
                 this.textContent = 'Hide Demographic Data';
@@ -3338,7 +3319,7 @@ function exitCreateNewAreaMode() {
     isCreatingNewArea = false;
     isCreatingNewAreaRecruitment = false;
     if (featureLayer) {
-        featureLayer.style = applyStyle;
+        featureLayer.style = applyStyleMob;
     }
 }
 function toggleDemographicTable(tableId, button) {
@@ -3353,27 +3334,27 @@ function toggleDemographicTable(tableId, button) {
         }
     }
 }
-function get_all_place_ids(){
+function get_all_place_idsMob(){
     featureLayer.style = (params) => {
         const feature = params.feature;
         if (feature) {
             const placeId = feature.Hg;
-            all_place_ids.push(placeId)
+            all_place_idsMob.push(placeId)
         }
-    return applyStyle(params);
+    return applyStyleMob(params);
     };
         setTimeout(
               function()
               {
-                load_postal_data(all_place_ids)
-                return all_place_ids
+                load_postal_data(all_place_idsMob)
+                return all_place_idsMob
               }, 1000);
 }
-function updateLabels() {
-    if (isAreaDevClicked && areRegionsVisible) {
+function updateLabelsMob() {
+    if (isAreaDevClickedMob && areRegionsVisible) {
         updateAreaDevLabels();
     }
-    if (isRecruitmentClicked && areRegionsVisibleRecruit) {
+    if (isRecruitmentClickedMob && areRegionsVisibleRecruit) {
         updateRecruitmentLabels();
     }
 }
@@ -3383,7 +3364,7 @@ function updateAreaDevLabels() {
     if (!areRegionsVisible) return; 
     selectedRegionGroups.forEach((group, groupId) => {
         if (group.regions && group.regions.length > 0) {
-            const regions = group.regions.map(placeId => selectedRegions.get(placeId)).filter(Boolean);
+            const regions = group.regions.map(placeId => selectedRegionsMob.get(placeId)).filter(Boolean);
             if (regions.length > 0) {
                 const centerLat = regions.reduce((sum, r) => sum + r.lat, 0) / regions.length;
                 const centerLng = regions.reduce((sum, r) => sum + r.lng, 0) / regions.length;
@@ -3399,12 +3380,12 @@ function updateAreaDevLabels() {
     });
 }
 function updateRecruitmentLabels() {
-    labelsRecruitment.forEach(label => label.setMap(null));
-    labelsRecruitment = [];
+    labelsRecruitmentMob.forEach(label => label.setMap(null));
+    labelsRecruitmentMob = [];
     if (!areRegionsVisibleRecruit) return; 
     selectedRegionGroupsRecruitment.forEach((group, groupId) => {
         if (group.regions && group.regions.length > 0) {
-            const regions = group.regions.map(placeId => selectedRegionsRecruitment.get(placeId)).filter(Boolean);
+            const regions = group.regions.map(placeId => selectedRegionsRecruitmentMob.get(placeId)).filter(Boolean);
             if (regions.length > 0) {
                 const centerLat = regions.reduce((sum, r) => sum + r.lat, 0) / regions.length;
                 const centerLng = regions.reduce((sum, r) => sum + r.lng, 0) / regions.length;
@@ -3414,7 +3395,7 @@ function updateRecruitmentLabels() {
                     return currentDist < closestDist ? current : closest;
                 }, regions[0]);
                 const labelText = `${group.recruitmentArea} - ${group.name} - ${group.category}`;
-                createLabel(centralRegion, labelText, labelsRecruitment);
+                createLabel(centralRegion, labelText, labelsRecruitmentMob);
             }
         }
     });
@@ -3440,13 +3421,13 @@ function createLabel(region, labelText, labelArray) {
     labelArray.push(label);
 }
 function saveRegionsRecruitment() {
-    const selectedRegionsRecruitmentJSON = Array.from(selectedRegionsRecruitment.values());
+    const selectedRegionsRecruitmentJSON = Array.from(selectedRegionsRecruitmentMob.values());
     const selectedRegionGroupsRecruitmentJSON = Array.from(selectedRegionGroupsRecruitment.values());
     $.ajax({
         url: "/save_regions_recruitment",
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ selectedRegionsRecruitment: selectedRegionsRecruitmentJSON, selectedRegionGroupsRecruitment: selectedRegionGroupsRecruitmentJSON }),
+        data: JSON.stringify({ selectedRegionsRecruitmentMob: selectedRegionsRecruitmentJSON, selectedRegionGroupsRecruitment: selectedRegionGroupsRecruitmentJSON }),
         success: function(response) {
             if (response.success) {
             } else {
@@ -3457,25 +3438,25 @@ function saveRegionsRecruitment() {
         }
     });
 }
-function actionBtnRecruitment() {
-    document.getElementById("ActionBtnRecruitment").addEventListener("click", function(){
-        document.getElementById("RecruitmentViewRight").style.display = "block";
-        document.getElementById("demographic-table-recruitment").style.display = "none";
+function ActionBtnRecruitmentMob() {
+    document.getElementById("ActionBtnRecruitmentMob").addEventListener("click", function(){
+        document.getElementById("RecruitmentViewRightMob").style.display = "block";
+        document.getElementById("demographic-table-recruitment-mob").style.display = "none";
     })
 }
-function closeBtnRecruitment() {
-    document.getElementById("CloseBtnRecruitment").addEventListener("click", function(){
-        document.getElementById("demographic-table-recruitment").style.display = "none";
+function CloseBtnRecruitmentMob() {
+    document.getElementById("CloseBtnRecruitmentMob").addEventListener("click", function(){
+        document.getElementById("demographic-table-recruitment-mob").style.display = "none";
     })
 }
 function GoBackToTableRecruitment() {
-    document.getElementById("BackToTableRecruitment").addEventListener("click", function(){
-        document.getElementById("demographic-table-recruitment").style.display = "block";
-        document.getElementById("RecruitmentViewRight").style.display = "none";
+    document.getElementById("BackToTableRecruitmentMob").addEventListener("click", function(){
+        document.getElementById("demographic-table-recruitment-mob").style.display = "block";
+        document.getElementById("RecruitmentViewRightMob").style.display = "none";
     })
 }
 function displayGroupDemographicsRecruitment(demographics) {
-    const table = document.getElementById('demographicTableRecruitment');
+    const table = document.getElementById('demographicTableRecruitmentMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
@@ -3549,7 +3530,7 @@ function renderPieChartRecruitment() {
                     color: classificationColors.get(name),
                     count
                 }));
-                const layerInfoView = document.getElementById('layerInfoViewRecruitment');
+                const layerInfoView = document.getElementById('layerInfoViewRecruitmentMob');
                 const existingCanvas = layerInfoView.querySelector('canvas');
                 const existingRecords = layerInfoView.querySelector('.records-count');
                 if (existingCanvas) existingCanvas.remove();
@@ -3560,7 +3541,7 @@ function renderPieChartRecruitment() {
                 recordsDiv.textContent = `Total Records: ${totalRecords}`;
                 layerInfoView.appendChild(recordsDiv);
                 const chartCanvas = document.createElement('canvas');
-                chartCanvas.id = 'classificationPieChartRecruitment';
+                chartCanvas.id = 'classificationPieChartRecruitmentMob';
                 layerInfoView.appendChild(chartCanvas);
                 const chartLabels = classifications.map(item => item.name);
                 const chartData = classifications.map(item => item.count);
@@ -3622,9 +3603,9 @@ function renderPieChartRecruitment() {
     });
 }
 function populateTableRecruitment() {
-    const tableBody = document.querySelector("#dataTableRecruitment tbody");
+    const tableBody = document.querySelector("#dataTableRecruitmentMob tbody");
     tableBody.innerHTML = "";
-    const savedRegions = Array.from(selectedRegionsRecruitment.values());
+    const savedRegions = Array.from(selectedRegionsRecruitmentMob.values());
     const groupedRegions = {};
     savedRegions.forEach(region => {
         if (!groupedRegions[region.groupId]) {
@@ -3649,7 +3630,7 @@ function populateTableRecruitment() {
         tableBody.appendChild(row);
     });
 }
-function exportToCSVRecruitment() {
+function exportToCSVRecruitmentMob() {
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Name,Unique Key,Classification\n";
     const savedRegions = JSON.parse(localStorage.getItem('selectedRegionsRecruitment')) || [];
@@ -3665,7 +3646,7 @@ function exportToCSVRecruitment() {
     document.body.removeChild(link);
   }
 function returnToMapRecruitment() {
-    document.getElementById("tableViewRecruitment").style.display = "none";
+    document.getElementById("tableViewRecruitmentMob").style.display = "none";
     document.getElementById("map-container").style.display = "block";
 }
 function load_postal_data_Recruitment(data_list_recruit){
@@ -3756,10 +3737,10 @@ async function getDisplayNameRecruitment(feature, latLng) {
     }
     return feature.name || `Feature ${feature.placeId}`;
 }
-function handleSubmitRecruitment() {
-    newSelectedRegionsRecruitment = Array.from(selectedRegionsRecruitment.values()).filter(region => region.groupId === null);
+function handleSubmitRecruitmentMob() {
+    newSelectedRegionsRecruitment = Array.from(selectedRegionsRecruitmentMob.values()).filter(region => region.groupId === null);
     if (newSelectedRegionsRecruitment.length > 0) {
-        document.getElementById("input-area-recruitment").style.display = "block";
+        document.getElementById("input-area-recruitment-mob").style.display = "block";
         document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
         document.querySelector('.color-option[data-color="white"]')?.classList.add('selected');
         selectedColorRecruitment = document.querySelector('.color-option[data-color="white"]')?.dataset.color || 'white';
@@ -3768,7 +3749,7 @@ function handleSubmitRecruitment() {
     }
 }
 function hide_demographic_table_Recruitment() {
-    var table = document.getElementById('demographic-table-recruitment');
+    var table = document.getElementById('demographic-table-recruitment-mob');
         if (table.style.display === 'block') {
             table.style.display = 'none';
             var toggleButton = document.getElementById('toggle-demographic-btn');
@@ -3776,7 +3757,7 @@ function hide_demographic_table_Recruitment() {
         }
 }
 function resetDemographicsTableRecruitment() {
-    const table = document.getElementById('demographicTable');
+    const table = document.getElementById('demographicTableMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     for (let row of rows) {
@@ -3801,10 +3782,11 @@ function addNewRegionRecruitment(feature, latLng) {
                 if (response.success) {
                     selectedRegionsRecruitmentDemographics.set(placeId, response.data);
                     updateAccumulatedDemographicsRecruitment();
-                    document.getElementById('demographic-table-recruitment').style.display = 'block';
-                    document.getElementById('demographic-table').style.display = 'none';
-                    document.getElementById('demographic-table-radial').style.display = 'none';
+                    document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
+                    document.getElementById('demographic-table-mob').style.display = 'none';
+                    document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 } else {
+                    alert("Could not find data for ZIP code: " + postalCode);
                     console.log("Could not find data for ZIP code: " + postalCode);
                 }
             },
@@ -3812,7 +3794,7 @@ function addNewRegionRecruitment(feature, latLng) {
                 console.log("Error fetching data. Please try again.");
             }
         });
-        selectedRegionsRecruitment.set(placeId, {
+        selectedRegionsRecruitmentMob.set(placeId, {
             displayName: displayName,
             placeId: placeId,
             featureType: feature.featureType,
@@ -3822,8 +3804,8 @@ function addNewRegionRecruitment(feature, latLng) {
             color: null,
             postalCode: postalCode
         });
-        featureLayer.style = applyStyle;
-        updateLabels();
+        featureLayer.style = applyStyleMob;
+        updateLabelsMob();
     });
 }
 async function addNewRegionForEditRecruitment(feature, latLng) {
@@ -3842,9 +3824,9 @@ async function addNewRegionForEditRecruitment(feature, latLng) {
             if (response.success) {
                 selectedRegionsRecruitmentDemographics.set(placeId, response.data);
                 updateAccumulatedDemographicsRecruitment();
-                document.getElementById('demographic-table-recruitment').style.display = 'block';
-                document.getElementById('demographic-table').style.display = 'none';
-                document.getElementById('demographic-table-radial').style.display = 'none';
+                document.getElementById('demographic-table-recruitment-mob').style.display = 'block';
+                document.getElementById('demographic-table-mob').style.display = 'none';
+                document.getElementById('demographic-table-radial-mob').style.display = 'none';
                 const newRegionRecruit = {
                     displayName: displayName,
                     placeId: placeId,
@@ -3855,10 +3837,10 @@ async function addNewRegionForEditRecruitment(feature, latLng) {
                     color: selectedColor,
                     postalCode: postalCode
                 };
-                selectedRegionsRecruitment.set(placeId, newRegionRecruit);
+                selectedRegionsRecruitmentMob.set(placeId, newRegionRecruit);
                 newSelectedRegionsRecruitment.push(newRegionRecruit);
-                featureLayer.style = applyStyle;
-                updateLabels();
+                featureLayer.style = applyStyleMob;
+                updateLabelsMob();
                 map.data.setStyle({visible: true});
             } else {
                 console.log("Could not find data for ZIP code: " + postalCode);
@@ -3905,7 +3887,7 @@ function calculateAccumulatedDemographicsRecruitment() {
 }
 function updateAccumulatedDemographicsRecruitment() {
     const accumulatedData = calculateAccumulatedDemographicsRecruitment();
-    const table = document.getElementById('demographicTableRecruitment');
+    const table = document.getElementById('demographicTableRecruitmentMob');
     const tbody = table.getElementsByTagName('tbody')[0];
     const rows = tbody.getElementsByTagName('tr');
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
@@ -3956,10 +3938,10 @@ function updateAccumulatedDemographicsRecruitment() {
     }
 }
 function highlightSelectedGroupRecruitment() {
-    featureLayer.style = applyStyle;
-    updateLabelsRecruitment();
+    featureLayer.style = applyStyleMob;
+    updatelabelsRecruitmentMob();
 }
-function handleDeleteRecruitment() {
+function handleDeleteRecruitmentMobMob() {
     document.getElementById("confirmDeleteButton").addEventListener("click", () => {
         if (selectedGroupForDeletionRecruitment !== null) {
             const groupToDelete = selectedRegionGroupsRecruitment.get(selectedGroupForDeletionRecruitment);
@@ -3973,16 +3955,16 @@ function handleDeleteRecruitment() {
                     success: function(response) {
                         if (response.status === 'success') {
                             groupToDelete.regions.forEach(placeId => {
-                            selectedRegionsRecruitment.delete(placeId);
+                            selectedRegionsRecruitmentMob.delete(placeId);
                         });
                             selectedRegionGroupsRecruitment.delete(selectedGroupForDeletionRecruitment);
                             selectedGroupForDeletionRecruitment = null;
                             resetDemographicsTableRecruitment();
                             saveRegionsRecruitment();
-                            featureLayer.style = applyStyle;
-                            updateLabelsRecruitment();
-                            document.getElementById("demographic-table-recruitment").style.display = "none";
-                            document.getElementById("RecruitmentViewRight").style.display = "none";
+                            featureLayer.style = applyStyleMob;
+                            updatelabelsRecruitmentMob();
+                            document.getElementById("demographic-table-recruitment-mob").style.display = "none";
+                            document.getElementById("RecruitmentViewRightMob").style.display = "none";
                         } else {
                             console.error(response.message);
                         }
@@ -3997,25 +3979,26 @@ function handleDeleteRecruitment() {
         }
         $('#delet-area').modal('hide');
     });
-    updateLabels;
+    updateLabelsMob;
 }
-function handleEditAreaRecruitment() {
+function handleEditAreaRecruitmentMob() {
     const loader = document.getElementById("loader-wrapper");
-    const RecruitmentViewRight = document.getElementById("RecruitmentViewRight");
-    const demographicTableRec = document.getElementById('demographic-table-recruitment');
-    const inputAreaRec = document.getElementById("input-area-recruitment")
-    const nameRec = document.getElementById("area-name-recruitment");
-    const recruitmentArea = document.getElementById("recruitmentArea");
-    const PotStoreCount = document.getElementById("PotStoreCount");
-    const zipCodesRecruitment = document.getElementById("zipCodesRecruitment");
-    const stateRecruitment = document.getElementById("stateRecruitment");
+    const RecruitmentViewRightMob = document.getElementById("RecruitmentViewRightMob");
+    const demographicTableRec = document.getElementById('demographic-table-recruitment-mob');
+    const inputAreaRec = document.getElementById("input-area-recruitment-mob")
+    const nameRec = document.getElementById("area-name-recruitment-mob");
+    const recruitmentArea = document.getElementById("recruitmentAreaMob");
+    const PotStoreCount = document.getElementById("PotStoreCountMob");
+    const zipCodesRecruitment = document.getElementById("zipCodesRecruitmentMob");
+    const stateRecruitment = document.getElementById("stateRecruitmentMob");
     zipCodesRecruitment.value = "";
     stateRecruitment.value = "";
     recruitmentArea.value = "";
     PotStoreCount.value = "";
     loader.style.display = "block";
-    RecruitmentViewRight.style.display = "none";
+    RecruitmentViewRightMob.style.display = "none";
     demographicTableRec.style.display = 'none';
+
     if (selectedGroupForDeletionRecruitment === null) {
         loader.style.display = "none";
         alert("Please select an area to edit first");
@@ -4025,34 +4008,24 @@ function handleEditAreaRecruitment() {
     isEditingArea = false;
     editingGroupIdRecruit = selectedGroupForDeletionRecruitment;
     const groupToEdit = selectedRegionGroupsRecruitment.get(editingGroupIdRecruit);
-    console.log("Group to Edit:", groupToEdit);
     newSelectedRegionsRecruitment = [];
     selectedRegionsRecruitmentDemographics.clear();
+
     if (!groupToEdit || !groupToEdit.regions) {
         loader.style.display = "none";
         return;
     }
-    if (groupToEdit.category) {
-        const radioButton = document.querySelector(`input[name="category"][value="${groupToEdit.category}"]`);
-        console.log("groupToEdit.category:", groupToEdit.category);
-        if (radioButton) {
-            radioButton.checked = true; 
-            if (groupToEdit.category === "Primary Area") {
-                selectedColorRecruitment = "rgb(255, 255, 153)";
-            } else if (groupToEdit.category === "Secondary Area") {
-                selectedColorRecruitment = "rgb(230, 230, 0)";
-            }
-            if (featureLayer) {
-                featureLayer.style = applyStyle;
-            }
-        } else {
-            const defaultRadio = document.querySelector('input[name="category"][value="Primary Area"]');
-            if (defaultRadio) {
-                defaultRadio.checked = true; 
-                selectedColorRecruitment = "rgb(255, 255, 153)";
-            }
-        }
+
+    // Set initial color based on category
+    if (groupToEdit.category === "Primary Area") {
+        selectedColorRecruitment = "rgb(255, 255, 153)";
+    } else if (groupToEdit.category === "Secondary Area") {
+        selectedColorRecruitment = "rgb(230, 230, 0)";
+    } else {
+        selectedColorRecruitment = groupToEdit.color || 'grey';
     }
+
+    // Update the color option selection in UI
     document.querySelectorAll('input[name="category"]').forEach(radio => {
         radio.addEventListener('change', function() {
             if (this.value === "Primary Area") {
@@ -4060,15 +4033,19 @@ function handleEditAreaRecruitment() {
             } else if (this.value === "Secondary Area") {
                 selectedColorRecruitment = "rgb(230, 230, 0)";
             }
+            // Update the map style to reflect the new color
             if (featureLayer) {
-                featureLayer.style = applyStyle;
+                featureLayer.style = applyStyleMob;
             }
         });
     });
     const uniqueStates = new Set();
+
+    // Rest of the code remains the same...
     const fetchPromises = groupToEdit.regions.map(placeId => {
-        const region = selectedRegionsRecruitment.get(placeId);
+        const region = selectedRegionsRecruitmentMob.get(placeId);
         if (!region) return Promise.resolve();
+
         const clonedRegion = JSON.parse(JSON.stringify(region));
         newSelectedRegionsRecruitment.push(clonedRegion);
         updateZipCodeInputRecruitment(region.postalCode, 'add');
@@ -4104,11 +4081,12 @@ function handleEditAreaRecruitment() {
                 },
                 error: function(xhr, status, error) {
                     console.error(`Error fetching data for postal code ${region.postalCode}:`, error);
-                    resolve();
+                    resolve(); // Resolve even on error to continue processing
                 }
             });
         });
     });
+
     Promise.all(fetchPromises)
         .then(() => {
             originalRegionsRecruit = [...newSelectedRegionsRecruitment];
@@ -4118,8 +4096,20 @@ function handleEditAreaRecruitment() {
             nameRec.value = groupToEdit.name;
             recruitmentArea.value = groupToEdit.recruitmentArea;
             PotStoreCount.value = groupToEdit.PotStoreCount;
-            featureLayer.style = applyStyle;
-            updateLabels();
+            if (groupToEdit.category) {
+                const radioButton = document.querySelector(`input[name="category"][value="${groupToEdit.category}"]`);
+                if (radioButton) {
+                    radioButton.checked = true;
+                } else {
+                    // Default to "Primary Area" if no category is set
+                    const defaultRadio = document.querySelector('input[name="category"][value="Primary Area"]');
+                    if (defaultRadio) {
+                        defaultRadio.checked = true;
+                    }
+                }
+            }
+            featureLayer.style = applyStyleMob;
+            updateLabelsMob();
             map.data.setStyle({visible: true});
         })
         .catch(error => {
@@ -4127,21 +4117,21 @@ function handleEditAreaRecruitment() {
         })
         .finally(() => {
             if (map && map.data) {
-                map.data.setStyle(applyStyle);
+                map.data.setStyle(applyStyleMob);
             }
             loader.style.display = "none";
         });
 }
 
-function updateLabelsRecruitment() {
-    overlaysRecruitment.forEach(overlay => overlay.setMap(null));
-    labelsRecruitment.forEach(label => label.setMap(null));
-    overlaysRecruitment = [];
-    labelsRecruitment = [];
+function updatelabelsRecruitmentMob() {
+    overlaysRecruitmentMob.forEach(overlay => overlay.setMap(null));
+    labelsRecruitmentMob.forEach(label => label.setMap(null));
+    overlaysRecruitmentMob = [];
+    labelsRecruitmentMob = [];
     if (selectedRegionGroupsRecruitment.size > 0) {
         selectedRegionGroupsRecruitment.forEach((group, groupId) => {
             if (group.regions.length > 0) {
-                const firstRegion = selectedRegionsRecruitment.get(group.regions[0]);
+                const firstRegion = selectedRegionsRecruitmentMob.get(group.regions[0]);
                 if (firstRegion) {
                     const labelText = prefixRecruitment ? `${prefixRecruitment} ${group.name}` : group.name;
                     const label = new google.maps.Marker({
@@ -4160,25 +4150,27 @@ function updateLabelsRecruitment() {
                             scale: 0,
                         }
                     });
-                    labelsRecruitment.push(label);
+                    labelsRecruitmentMob.push(label);
                 }
             }
         });
     }
 }
 /////////////////////////////////////////////////////////////////
-function actionBtnRadial() {
-    document.getElementById("ActionBtnRadial").addEventListener("click", function(){
-        document.getElementById("RadialViewRight").style.display = "block";
-        document.getElementById("demographic-table-radial").style.display = "none";
+function ActionBtnRadialMob() {
+    document.getElementById("ActionBtnRadialMob").addEventListener("click", function(){
+        alert("Action button of radial clicked");
+        document.getElementById("RadialViewRightMob").style.display = "block";
+        document.getElementById("demographic-table-radial-mob").style.display = "none";
     })
 }
-function closeBtnRadial() {
-    document.getElementById("CloseBtnRadial").addEventListener("click", function(){
-        document.getElementById("demographic-table-radial").style.display = "none";
+function CloseBtnRadialMob() {
+    document.getElementById("CloseBtnRadialMob").addEventListener("click", function(){
+        document.getElementById("demographic-table-radial-mob").style.display = "none";
     })
 }
 function handleDeleteRadial() {
+    console.log("Delete button clicked");
     const confirmDeleteButtonRadial = document.getElementById("confirmDeleteButton");
     confirmDeleteButtonRadial.addEventListener("click", () => {
         if (activeCircle) {
@@ -4197,8 +4189,8 @@ function handleDeleteRadial() {
                         }
                         circles.delete(circleId);
                         $('#delet-area').modal('hide');
-                        document.getElementById("demographic-table-radial").style.display = "none";
-                        document.getElementById("RadialViewRight").style.display = "none";
+                        document.getElementById("demographic-table-radial-mob").style.display = "none";
+                        document.getElementById("RadialViewRightMob").style.display = "none";
                     } else {
                         console.error("Error deleting circle:", response.message);
                     }
@@ -4211,12 +4203,12 @@ function handleDeleteRadial() {
                 }
             });
         } else {
-            console.log("No circle selected for deletion.");
+            alert("No circle selected for deletion.");
         }
     });
 }
 function populateCircleTable() {
-    const tableBody = document.querySelector("#dataTableRadial tbody");
+    const tableBody = document.querySelector("#dataTableradialMob tbody");
     tableBody.innerHTML = "";
     const savedCirclesArray = Array.from(circles.values());
     savedCirclesArray.forEach(circleData => {
@@ -4232,11 +4224,11 @@ function populateCircleTable() {
         tableBody.appendChild(row);
     });
 }
-function populateTableForCircle(circleId) {
+function populateTableForCircleMob(circleId) {
     accumulatedData = null;
     const circleData = circles.get(circleId);
     if (circleData && circleData.data.demographics) {
-        const table = document.getElementById("demographic-table-radial");
+        const table = document.getElementById("demographic-table-radial-mob");
         if (selectedCircleId === circleId) {
             if (table.style.display === "block") {
                 table.style.display = "none";
@@ -4244,16 +4236,16 @@ function populateTableForCircle(circleId) {
                 selectedCircleId = null;
             } else {
                 table.style.display = "block";
-                document.getElementById("demographic-table-recruitment").style.display = "none";
-                document.getElementById("demographic-table").style.display = "none";
+                document.getElementById("demographic-table-recruitment-mob").style.display = "none";
+                document.getElementById("demographic-table-mob").style.display = "none";
                 highlightCircle(circleId);
                 RadialpopulateTable(circleData.data.demographics);
                 selectedCircleId = circleId;
             }
         } else {
             table.style.display = "block";
-            document.getElementById("demographic-table-recruitment").style.display = "none";
-            document.getElementById("demographic-table").style.display = "none";
+            document.getElementById("demographic-table-recruitment-mob").style.display = "none";
+            document.getElementById("demographic-table-mob").style.display = "none";
             resetCircleHighlight(selectedCircleId);
             highlightCircle(circleId);
             RadialpopulateTable(circleData.data.demographics);
@@ -4287,54 +4279,74 @@ function resetDemographicTable() {
         population: 0,
         median_income: 0,
     };
-    document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent = '';
-    document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent = '';
+    document.querySelector("#demographicTableRadialMob tbody").rows[0].cells[1].textContent = '';
+    document.querySelector("#demographicTableRadialMob tbody").rows[1].cells[1].textContent = '';
     circles.forEach((data, id) => {
         resetCircleHighlight(id);
     });
 }
-function setupMapClickListener() {
+function setupMapClickListenerMob() {
     google.maps.event.addListener(map, 'click', function(event) {
-        const demographicTableRadial = document.getElementById("demographic-table-radial");
-        if (selectedCircleId && circles[selectedCircleId] && circles[selectedCircleId].cid) {
-            return;
-        }
-        if (!lastInteractedFeatureIds || lastInteractedFeatureIds.length === 0) {
-            demographicTableRadial.style.display = "none";
-            accumulatedData = null;
-            if (selectedCircleId) {
-                resetCircleHighlight(selectedCircleId);
-                selectedCircleId = null;
+        const demographicTable = document.getElementById("demographic-table-mob");
+        const demographicTableRecruitment = document.getElementById("demographic-table-recruitment-mob");
+        const demographicTableRadial = document.getElementById("demographic-table-radial-mob");
+        if (!lastInteractedFeatureIdsMob || lastInteractedFeatureIdsMob.length === 0) {
+            if (demographicTable && demographicTable.style.display === "block") {
+                demographicTable.style.display = "none";
+                if (selectedGroupForDeletion) {
+                    resetGroupHighlight(selectedGroupForDeletion);
+                    selectedGroupForDeletion = null;
+                }
             }
+            if (demographicTableRecruitment && demographicTableRecruitment.style.display === "block") {
+                demographicTableRecruitment.style.display = "none";
+                if (selectedGroupForDeletionRecruitment) {
+                    resetGroupHighlight(selectedGroupForDeletionRecruitment);
+                    selectedGroupForDeletionRecruitment = null;
+                }
+            }
+            if (demographicTableRadial && demographicTableRadial.style.display === "block") {
+                demographicTableRadial.style.display = "none";
+                if (selectedCircleId) {
+                    resetCircleHighlight(selectedCircleId);
+                    selectedCircleId = null;
+                }
+            }
+            const ActionBtnMob = document.getElementById('ActionBtnMob');
+            const CloseBtnMob = document.getElementById('CloseBtnMob');
+            if (ActionBtnMob) ActionBtnMob.style.display = "none";
+            if (CloseBtnMob) CloseBtnMob.style.display = "none";
         }
     });
 }
-
 function resetGroupHighlight(groupId) {
-    featureLayer.style = (feature) => applyStyle(feature);
-    updateLabels();
+    featureLayer.style = (feature) => applyStyleMob(feature);
+    updateLabelsMob();
 }
-function setupAutocompleteTrigger(input) {
-    input.addEventListener("keyup", () => {
-        if (input.value.length >= 3 && !autocomplete) {
-            initAutocomplete(input);
-            resetDemographicTable()
-        }
-    });
-}
-function initAutocomplete(input) {
-    const autocomplete = new google.maps.places.Autocomplete(input);
-    autocomplete.setTypes(["geocode"]);
-    autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
+function initMobileAutocomplete() {
+    const mobileInput = document.getElementById("autocompleteMob");
+    if (!mobileInput) {
+        console.error("Mobile input field not found");
+        return;
+    }
+    if (!google || !google.maps || !google.maps.places) {
+        console.error("Google Maps API not loaded yet");
+        return;
+    }
+    console.log("Initializing mobile autocomplete");
+    autocompleteMob = new google.maps.places.Autocomplete(mobileInput);
+    autocompleteMob.setTypes(["geocode"]);
+    autocompleteMob.addListener("place_changed", () => {
+        const place = autocompleteMob.getPlace();
+        console.log("Selected place:", place);
         if (place.geometry) {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             selectedLocation = { lat: lat, lng: lng };
-            if (currentMarker) {
-                currentMarker.setMap(null);
+            if (currentMarkerMob) {
+                currentMarkerMob.setMap(null);
             }
-            currentMarker = new google.maps.Marker({
+            currentMarkerMob = new google.maps.Marker({
                 map: map,
                 position: selectedLocation,
                 animation: google.maps.Animation.DROP
@@ -4346,10 +4358,29 @@ function initAutocomplete(input) {
         }
     });
 }
+
+// Function to set up mobile autocomplete when user types
+function setupAutocompleteTrigger() {
+    const mobileInput = document.getElementById("autocompleteMob");
+    if (!mobileInput) {
+        console.error("Mobile input field not found");
+        return;
+    }
+    mobileInput.addEventListener("input", function() {
+        console.log("Mobile input value:", this.value);
+        if (this.value.length >= 3 && !autocompleteMob) {
+            initMobileAutocomplete();
+            
+            if (typeof resetDemographicTable === 'function') {
+                resetDemographicTable();
+            }
+        }
+    });
+}
 function RadialpopulateTable(data) {
-    document.getElementById("demographic-table-radial").style.display = "block";
-    document.getElementById("demographic-table-recruitment").style.display = "none";
-    document.getElementById("demographic-table").style.display = "none";
+    document.getElementById("demographic-table-radial-mob").style.display = "block";
+    document.getElementById("demographic-table-recruitment-mob").style.display = "none";
+    document.getElementById("demographic-table-mob").style.display = "none";
     if (!accumulatedData) {
         accumulatedData = {
             population: 0,
@@ -4358,8 +4389,8 @@ function RadialpopulateTable(data) {
     }
     accumulatedData.population += parseInt(data.population) || 0;
     accumulatedData.median_income += parseInt(data.median_income) || 0;
-    document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent = data.population || 0;
-    document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent = data.median_income || 0;
+    document.querySelector("#demographicTableRadialMob tbody").rows[0].cells[1].textContent = data.population || 0;
+    document.querySelector("#demographicTableRadialMob tbody").rows[1].cells[1].textContent = data.median_income || 0;
 }
 async function fetchPopulationData(center, radius) {
     try {
@@ -4534,13 +4565,13 @@ async function getPlacesInCircle(center, radius) {
 
 
 async function createCircleAtSelectedLocation() {
-    resetDemographicTable(); 
-    isCircleSaved = false; 
-
+    console.log("Creating circle at selected location...");
+    console.log("selectedLocation:", selectedLocation);
+    resetDemographicTable();
     if (selectedLocation) {
-        if (currentMarker) {
-            currentMarker.setMap(null);
-            currentMarker = null;
+        if (currentMarkerMob) {
+            currentMarkerMob.setMap(null);
+            currentMarkerMob = null;
         }
         map.setCenter(selectedLocation);
         map.setZoom(9);
@@ -4549,18 +4580,19 @@ async function createCircleAtSelectedLocation() {
         const newCircle = new google.maps.Circle({
             map: map,
             center: selectedLocation,
-            radius: 4828.03,
-            fillColor: "#808080",
+            radius: 4828.03, 
+            fillColor: '#808080',
             fillOpacity: 0.2,
-            strokeColor: "#808080",
+            strokeColor: '#808080',
             strokeOpacity: 0.5,
             strokeWeight: 2,
-            id: newCircleId,
+            id: newCircleId
         });
+        alert("creating circle");
         try {
             const data = await fetchPopulationData(selectedLocation, 4828.03);
             console.log("Fetched data for selected location:", data);
-            RadialpopulateTable(data);
+            RadialpopulateTable(data); 
         } catch (error) {
             console.error(`Error fetching population data for circle ${newCircleId}:`, error);
         }
@@ -4575,48 +4607,43 @@ async function createCircleAtSelectedLocation() {
             circle: newCircle,
             label: null,
             data: {
-                name: "",
-                color: "#808080",
+                name: '',
+                color: '#808080',
                 radius: 4828.03,
-                places: placesInCircle,
-                demographics: {},
-            },
+                places: placesInCircle, 
+                demographics: {}
+            }
         };
         circles.set(newCircleId, circleDataToSet);
         activeCircle = newCircle;
-        const mapClickListener = map.addListener("click", () => {
-            if (!isCircleSaved) {
-                console.log("Circle not saved. Removing circle and clearing data...");
-                newCircle.setMap(null);
-                circles.delete(newCircleId);
-                activeCircle = null;
-                activeCircleId = null;
-                resetDemographicTable(); // Clear demographic data
-                google.maps.event.removeListener(mapClickListener);
-                document.getElementById("ActionBtnRadial").style.display = "block";
-                document.getElementById("CloseBtnRadial").style.display = "block";
-            }
+        const mapClickListener = map.addListener('click', () => {
+            newCircle.setMap(null);
+            circles.delete(newCircleId);
+            activeCircle = null;
+            activeCircleId = null;
+            google.maps.event.removeListener(mapClickListener);
+            document.getElementById("ActionBtnRadialMob").style.display = "block";
+            document.getElementById("CloseBtnRadialMob").style.display = "block";
         });
         newCircle.addListener("click", () => {
             activeCircle = newCircle;
             activeCircleId = newCircleId;
-            showInputPanel();
+            showInputPanelMob();
         });
-        document.getElementById("ActionBtnRadial").style.display = "none";
-        document.getElementById("CloseBtnRadial").style.display = "none";
-        showInputPanel();
+        document.getElementById("ActionBtnRadialMob").style.display = "none";
+        document.getElementById("CloseBtnRadialMob").style.display = "none";
+        showInputPanelMob();
     }
 }
 
-
-function showInputPanel() {
-    const panel = document.getElementById("demographic-table-radial");
+function showInputPanelMob() {
+    const panel = document.getElementById("demographic-table-radial-mob");
     if (panel) {
         panel.style.display = "block";
-        document.getElementById("demographic-table-recruitment").style.display = "none";
-        document.getElementById("demographic-table").style.display = "none";
-        const nameInput = document.getElementById("area-name-radial");
-        const radiusInput = document.getElementById("typeNumber");
+        document.getElementById("demographic-table-recruitment-mob").style.display = "none";
+        document.getElementById("demographic-table-mob").style.display = "none";
+        const nameInput = document.getElementById("area-name-radial-mob");
+        const radiusInput = document.getElementById("typeNumberMob");
         if (nameInput && radiusInput) {
             nameInput.value = '';
             radiusInput.value = (circles.get(activeCircle.id).data.radius / 1609.34).toFixed(2);
@@ -4645,7 +4672,7 @@ function renderPieChartRadial() {
         name: colorNames.get(color),
         count: count
     }));
-    const layerInfoView = document.getElementById('layerInfoViewRadial');
+    const layerInfoView = document.getElementById('layerInfoViewRadialMob');
     const existingCanvas = layerInfoView.querySelector('canvas');
     const existingRecords = layerInfoView.querySelector('.records-count');
     const existingLegend = layerInfoView.querySelector('.classification-legend');
@@ -4727,7 +4754,7 @@ function deleteCircleFromTable(circleId) {
     }
 }
 function populateTableRadial(data) {
-    const tableBody = document.querySelector("#dataTableRadial tbody");
+    const tableBody = document.querySelector("#dataTableradialMob tbody");
     const filterRow = tableBody.querySelector("tr:first-child");
     tableBody.innerHTML = "";
     tableBody.appendChild(filterRow);
@@ -4750,7 +4777,7 @@ function populateTableRadial(data) {
         tableBody.appendChild(row);
     });
 }
-function exportToCSVRadial() {
+function exportToCSVRadialMob() {
     const savedCircles = Array.from(circles.values());
     let csvContent = "Name,Latitude,Longitude,Radius (meters),Color\n";
     savedCircles.forEach(circleData => {
@@ -4781,8 +4808,8 @@ function exportToCSVRadial() {
     }
 }
 function returnToMapRadial() {
-    document.getElementById("tableViewRadial").style.display = "none";
-    document.getElementById("map-container").style.display = "block";
+    document.getElementById("tableViewRadialMob").style.display = "none";
+    document.getElementById("map").style.display = "block";
 }
 function initializeColorOptionsRadial() {
     document.querySelectorAll('.color-option').forEach(option => {
@@ -4815,7 +4842,7 @@ function handleColorOptionClickRadial(e) {
 function handleSubmitRadial() {
     newSelectedRegionsRadial = Array.from(selectedRegionsRadial.values()).filter(region => region.groupId === null);
     if (newSelectedRegionsRadial.length > 0) {
-        document.getElementById("input-area-radial").style.display = "block";
+        document.getElementById("input-area-radial-mob").style.display = "block";
         document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
         document.querySelector('.color-option[data-color="white"]')?.classList.add('selected');
         selectedColorRadial = document.querySelector('.color-option[data-color="white"]')?.dataset.color || 'white';
@@ -4824,7 +4851,7 @@ function handleSubmitRadial() {
     }
 }
 function hide_demographic_tableRadial() {
-    var table = document.getElementById('demographic-table-radial');
+    var table = document.getElementById('demographic-table-radial-mob');
         if (table.style.display === 'block') {
             table.style.display = 'none';
             var toggleButton = document.getElementById('toggle-demographic-btn');
@@ -4835,7 +4862,7 @@ function handleSaveRadial() {
     if (!activeCircle) {
         return;
     }
-    const name = document.getElementById("area-name-radial").value.trim();
+    const name = document.getElementById("area-name-radial-mob").value.trim();
     if (!name) {
         alert("Please enter a name for the selected area.");
         return;
@@ -4847,12 +4874,12 @@ function handleSaveRadial() {
     }
     const color = selectedColorOption.dataset.color;
     const demographicData = {
-        population: document.querySelector("#demographicTableRadial tbody").rows[0].cells[1].textContent,
-        median_income: document.querySelector("#demographicTableRadial tbody").rows[1].cells[1].textContent,
+        population: document.querySelector("#demographicTableRadialMob tbody").rows[0].cells[1].textContent,
+        median_income: document.querySelector("#demographicTableRadialMob tbody").rows[1].cells[1].textContent,
     };
-    const franchiseeNumber = document.getElementById("franchise-number-radial").value.trim();
-    const city = document.getElementById("city-radial").value.trim();
-    const state = document.getElementById("state-radial").value.trim();
+    const franchiseeNumber = document.getElementById("franchise-number-radial-mob").value.trim();
+    const city = document.getElementById("city-radial-mob").value.trim();
+    const state = document.getElementById("state-radial-mob").value.trim();
     activeCircle.setOptions({
         fillColor: color,
         strokeColor: color
@@ -4891,15 +4918,15 @@ function handleSaveRadial() {
     });
     saveCirclesToLocalStorage()
         .then(() => {
-            document.getElementById("demographic-table-radial").style.display = "block";
-            document.getElementById("input-area-radial").style.display = "none";
+            document.getElementById("demographic-table-radial-mob").style.display = "block";
+            document.getElementById("input-area-radial-mob").style.display = "none";
             renderPieChartRadial();
             setTimeout(() => {
-                document.getElementById("autocomplete").value = '';
-                document.getElementById("area-name-radial").value = '';
-                document.getElementById("franchise-number-radial").value = '';
-                document.getElementById("city-radial").value = '';
-                document.getElementById("state-radial").value = '';
+                document.getElementById("autocompleteMob").value = '';
+                document.getElementById("area-name-radial-mob").value = '';
+                document.getElementById("franchise-number-radial-mob").value = '';
+                document.getElementById("city-radial-mob").value = '';
+                document.getElementById("state-radial-mob").value = '';
                 const selectedColor = document.querySelector('.color-option.selected');
                 if (selectedColor) {
                     selectedColor.classList.remove('selected');
@@ -4915,7 +4942,6 @@ function handleSaveRadial() {
         .catch(error => {
             console.error("Error in save process:", error);
         });
-        isCircleSaved = true;
 }
 function saveCirclesToLocalStorage() {
     return new Promise((resolve, reject) => {
@@ -4952,16 +4978,16 @@ function saveCirclesToLocalStorage() {
                     resolve();
                 } else {
                     console.log("Error saving circle data:", response.message);
-                    document.getElementById("demographic-table-radial").style.display = "block";
-                    document.getElementById("ActionBtnRadial").style.display = "block";
-                    document.getElementById("CloseBtnRadial").style.display = "block";
-                    document.getElementById("submit-btn-radial").style.display = "none";
-                    document.getElementById("input-area-radial").style.display = "none";
-                    document.getElementById("autocomplete").value = '';
-                    document.getElementById("area-name-radial").value = '';
-                    document.getElementById("franchise-number-radial").value = '';
-                    document.getElementById("city-radial").value = '';
-                    document.getElementById("state-radial").value = '';
+                    document.getElementById("demographic-table-radial-mob").style.display = "block";
+                    document.getElementById("ActionBtnRadialMob").style.display = "block";
+                    document.getElementById("CloseBtnRadialMob").style.display = "block";
+                    document.getElementById("submit-btn-radial-mob").style.display = "none";
+                    document.getElementById("input-area-radial-mob").style.display = "none";
+                    document.getElementById("autocompleteMob").value = '';
+                    document.getElementById("area-name-radial-mob").value = '';
+                    document.getElementById("franchise-number-radial-mob").value = '';
+                    document.getElementById("city-radial-mob").value = '';
+                    document.getElementById("state-radial-mob").value = '';
                     const selectedColor = document.querySelector('.color-option.selected');
                     if (selectedColor) {
                         selectedColor.classList.remove('selected');
@@ -4981,11 +5007,11 @@ function saveCirclesToLocalStorage() {
     });
 }
 function initializeEventListenersRadial() {
-    document.getElementById('submit-btnRadial')?.addEventListener('click', function() {
+    document.getElementById('submit-btn-radial-mob')?.addEventListener('click', function() {
         handleSubmitRadial();
         hide_demographic_tableRadial();
     });
-    document.getElementById("save-btn-radial")?.addEventListener("click", handleSaveRadial);
+    document.getElementById("save-btn-radial-mob")?.addEventListener("click", handleSaveRadial);
     document.querySelectorAll('.action-btn').forEach(button => {
         if (button.textContent.trim() === 'Edit label content') {
             button.addEventListener('click', () => {
@@ -5058,7 +5084,7 @@ async function updateUIElements(newRadius) {
     }
 }
 function updateSaveButtonState() {
-    const saveButton = document.getElementById('saveBtnForRadius');
+    const saveButton = document.getElementById('saveBtnForRadiusMob');
     if (saveButton) {
         saveButton.disabled = !hasUnsavedChanges;
         saveButton.classList.toggle('btn-warning', hasUnsavedChanges);
@@ -5073,7 +5099,7 @@ async function handleRadiusChange(newRadius) {
         alert("Please select a circle to edit first");
         return;
     }
-    const saveButton = document.getElementById('saveBtnForRadius');
+    const saveButton = document.getElementById('saveBtnForRadiusMob');
     saveButton.disabled = true;
     saveButton.textContent = 'Updating...';
     try {
@@ -5205,7 +5231,7 @@ function applyStyleRadial(params) {
             };
         }
     }
-    if (lastInteractedFeatureIds.includes(placeId)) {
+    if (lastInteractedFeatureIdsMob.includes(placeId)) {
         return styleMouseMove;
     }
     return styleDefault;
@@ -5243,3 +5269,4 @@ function updateLabelsRadial() {
         });
     }
 }
+initNormalMapMob();

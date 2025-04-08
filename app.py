@@ -55,7 +55,7 @@ def save_regions():
                         group.get('classificationText', 'Default Classification'),
                         group.get('franchisee', ''),
                         group.get('numDevelopments', 0),
-                        zip_codes,
+                        zip_codes,  # Store zip codes as a single string
                         group.get('state', '')
                     ))
             for region in selected_regions:
@@ -348,6 +348,7 @@ def load_regions_recruitment():
     finally:
         if connection:
             connection.close()
+            
 @app.route('/delete_region_group_recruitment', methods=['POST'])
 def delete_region_group_recruitment():
     data = request.get_json()
