@@ -656,7 +656,7 @@ function addControlListeners() {
         const backToLayerControlFromHeatMappingBtnRadial = document.getElementById('backToLayerControlFromHeatMappingBtnRadial');
         const input = document.getElementById("autocomplete");
         const input_back_btn = document.getElementById("backToRadialControlFromAutoComplete");
-        const SubmitButtonAutoComplete = document.getElementById("SubmitButtonAutoComplete");
+        const SubmitButtonAutoComplete = document.getElementById("submitButtonAutoComplete");
         const demographicTableRadial = document.getElementById("demographic-table-radial");
         const submit_btnRadial = document.getElementById("submit-btn-radial");
         const RadialViewRight = document.getElementById("RadialViewRight");
@@ -797,7 +797,6 @@ function addControlListeners() {
                 if (franchiseControls) {
                     isAreaDevClicked = !isAreaDevClicked;
                     franchiseControls.style.display = isAreaDevClicked ? 'flex' : 'none';
-                    
                     if (isAreaDevClicked) {
                         loadSavedRegions();
                     } else {

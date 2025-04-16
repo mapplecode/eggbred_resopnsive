@@ -115,13 +115,11 @@
             padding: 0;
             margin-top: 20px;
         }
-
         .table th,
         .table td {
             text-align: left;
             vertical-align: middle;
         }
-
         #demographic-table button,
         #demographic-table-mob button {
             width: 100%;
@@ -1862,16 +1860,13 @@
     <!-- <script src="static\js\main.js"></script> -->
     <!-- <script src="static\js\mobile.js"></script> -->
     <script type="module">
-        // Wait for DOM to be ready
         function loadAppropriateScript() {
           if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
             import('./static/js/mobile.js')
               .then(module => {
-                // Call the init function if it exists
                 if (typeof module.init === 'function') {
                   module.init();
                 } else {
-                  // If no init function, try to run any setup that might be in the module
                   console.log('Mobile module loaded, but no init function found');
                 }
               })
@@ -1892,8 +1887,6 @@
               });
           }
         }
-      
-        // If DOM is already loaded, run immediately, otherwise wait
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', loadAppropriateScript);
         } else {

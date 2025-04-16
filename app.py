@@ -6,6 +6,7 @@ import os
 import csv
 import mysql.connector
 from home import state_by_zipCode
+import time
 
 app = Flask(__name__)
 API_KEY = "AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc" 
@@ -40,7 +41,7 @@ def save_regions():
     try:
         with connection.cursor() as cursor:
             for group in selected_region_groups:
-                zip_codes = ','.join(group.get('zipCodes', []))  # Join list into a comma-separated string
+                zip_codes = ','.join(group.get('zipCodes', []))  
                 cursor.execute("SELECT id FROM selectedregiongroups WHERE id = %s", (group['id'],))
                 existing_group = cursor.fetchone()
                 if not existing_group:
@@ -55,7 +56,7 @@ def save_regions():
                         group.get('classificationText', 'Default Classification'),
                         group.get('franchisee', ''),
                         group.get('numDevelopments', 0),
-                        zip_codes,  # Store zip codes as a single string
+                        zip_codes,
                         group.get('state', '')
                     ))
             for region in selected_regions:
@@ -746,6 +747,80 @@ def get_state():
         city_name = state.get("city")
     return jsonify({"success": True, "data": state_name, "city": city_name})
 
+def parse_coordinates(center):
+    """Parse and validate the center coordinates"""
+    try:
+        lat_lng = center.split(',')
+        if len(lat_lng) != 2:
+            return None, "Invalid center format, expected 'lat,lng'"
+        
+        lat = float(lat_lng[0])
+        lng = float(lat_lng[1])
+        
+        if not (-90 <= lat <= 90):
+            return None, f"Invalid latitude {lat}, must be between -90 and 90"
+        if not (-180 <= lng <= 180):
+            return None, f"Invalid longitude {lng}, must be between -180 and 180"
+            
+        return f"{lng},{lat}", None
+    except Exception as e:
+        return None, f"Error parsing coordinates: {str(e)}"
+
+def make_api_request(url, params, max_retries=3, backoff_factor=0.5):
+    """Make API request with retry logic and SSL verification disabled"""
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            # Disable SSL verification since the certificate has expired
+            response = requests.get(url, params=params, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json(), None
+        except requests.exceptions.RequestException as e:
+            retry_count += 1
+            if retry_count >= max_retries:
+                return None, f"API request failed after {max_retries} attempts: {str(e)}"
+            
+            # Calculate backoff time with exponential backoff
+            wait_time = backoff_factor * (2 ** (retry_count - 1))
+            print(f"Retry {retry_count}/{max_retries} for {url} after {wait_time:.2f}s: {str(e)}")
+            time.sleep(wait_time)
+
+def fetch_population_data(center, radius, api_key):
+    """Fetch population data from API"""
+    url = "https://osm.buntinglabs.com/v1/census/population"
+    params = {
+        'center': center,
+        'radius': radius,
+        'api_key': api_key
+    }
+    
+    print(f"Making population API request to {url} with params: {params}")
+    data, error = make_api_request(url, params)
+    
+    if error:
+        print(f"Population API error: {error}")
+        return None, error
+    
+    population = data.get("population", 0)
+    return population, None
+
+def fetch_income_data(center, radius, api_key):
+    """Fetch income data from API"""
+    url = "https://osm.buntinglabs.com/v1/census/income"
+    params = {
+        'center': center,
+        'radius': radius,
+        'api_key': api_key
+    }
+    print(f"Making income API request to {url} with params: {params}")
+    data, error = make_api_request(url, params)
+    
+    if error:
+        print(f"Income API error: {error}")
+        return None, error
+    
+    median_income = data.get("median_income", 0)
+    return median_income, None
 
 @app.route("/fetch_population", methods=["GET"])
 def fetch_population():
@@ -754,49 +829,52 @@ def fetch_population():
         radius = request.args.get('radius')
         if not center or not radius:
             return jsonify({"success": False, "error": "Center and radius are required"})
-        try:
-            lat_lng = center.split(',')
-            if len(lat_lng) != 2:
-                return jsonify({"success": False, "error": "Invalid center format, expected 'lat,lng'"})
-            lat = float(lat_lng[0])
-            lng = float(lat_lng[1])
-            if not (-90 <= lat <= 90):
-                return jsonify({"success": False, "error": f"Invalid latitude {lat}, must be between -90 and 90"})
-            if not (-180 <= lng <= 180):
-                return jsonify({"success": False, "error": f"Invalid longitude {lng}, must be between -180 and 180"})
-            api_center = f"{lng},{lat}"
-        except Exception as e:
-            return jsonify({"success": False, "error": f"Error parsing coordinates: {str(e)}"})
-        api_key = "7P6Fr7dpk2i"  
-        params = {
-            'center': api_center,
-            'radius': radius,
-            'api_key': api_key
-        }
-        population_url = "https://osm.buntinglabs.com/v1/census/population"
-        print(f"Making API request to {population_url} with params: {params}")
-        population_response = requests.get(population_url, params=params)
-        population_response.raise_for_status()
-        population_data = population_response.json()
-        population = population_data.get("population", 0)
-        income_url = "https://osm.buntinglabs.com/v1/census/income"
-        print(f"Making API request to {income_url} with params: {params}")
-        income_response = requests.get(income_url, params=params)
-        income_response.raise_for_status()
-        income_data = income_response.json()
-        median_income = income_data.get("median_income", 0)
+        api_center, coord_error = parse_coordinates(center)
+        if coord_error:
+            return jsonify({"success": False, "error": coord_error})
+        api_key = "7P6Fr7dpk2i"
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        population, pop_error = fetch_population_data(api_center, radius, api_key)
+        median_income, income_error = fetch_income_data(api_center, radius, api_key)
+        if pop_error and income_error:
+            return jsonify({
+                "success": False, 
+                "error": f"Both API endpoints failed. Population error: {pop_error}. Income error: {income_error}",
+                "data": {
+                    "population": 0,
+                    "median_income": 0
+                }
+            })
+        elif pop_error:
+            return jsonify({
+                "success": True,
+                "warning": f"Population data failed: {pop_error}",
+                "data": {
+                    "population": 0,
+                    "median_income": median_income or 0
+                }
+            })
+        elif income_error:
+            return jsonify({
+                "success": True,
+                "warning": f"Income data failed: {income_error}",
+                "data": {
+                    "population": population or 0,
+                    "median_income": 0
+                }
+            })
         return jsonify({
             "success": True,
             "data": {
-                "population": population,
-                "median_income": median_income
+                "population": population or 0,
+                "median_income": median_income or 0
             }
-        })
-    except requests.exceptions.RequestException as e:
-        print(f"API request error: {e}")
-        return jsonify({"success": False, "error": f"API request error: {str(e)}"})
+        })        
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        import traceback
+        print(f"Unexpected error: {e}")
+        print(traceback.format_exc())
         return jsonify({"success": False, "error": str(e)})
 
 
