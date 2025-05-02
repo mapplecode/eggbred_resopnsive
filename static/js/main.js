@@ -281,12 +281,19 @@ function GoBackToTableFranchise() {
 // Function to add data demographic table rows on right panel for area development
 function displayGroupDemographics(demographics) {
     const table = document.getElementById('demographicTable');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
+
         switch(label) {
             case 'Population':
                 valueCell.textContent = formatNumber(demographics.population);
@@ -329,6 +336,7 @@ function displayGroupDemographics(demographics) {
         }
     }
 }
+
 //  Fuction to handle style on Mouse Move for Area development
 function handleMouseMove(e) {
     lastInteractedFeatureIds = e.features.map((f) => f.placeId);
@@ -2163,6 +2171,8 @@ function handleAreaDevClick(e) {
             if (selectedRegionsDemographics.size > 0) {
                 updateAccumulatedDemographics();
                 document.getElementById('demographic-table').style.display = 'block';
+                // document.getElementById('submit-btn').style.display = 'none';
+                
                 document.getElementById('demographic-table-recruitment').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
             } else {
@@ -2184,6 +2194,7 @@ function handleAreaDevClick(e) {
                 if (selectedRegionsDemographics.size > 0) {
                     updateAccumulatedDemographics();
                     document.getElementById('demographic-table').style.display = 'block';
+                    // document.getElementById('submit-btn').style.display = 'none';
                     document.getElementById('demographic-table-recruitment').style.display = 'none';
                     document.getElementById('demographic-table-radial').style.display = 'none';
                 } else {
@@ -2201,6 +2212,7 @@ function handleAreaDevClick(e) {
                         selectedGroupForDeletion = groupIdarea;
                         displayGroupDemographics(grouparea.demographics);
                         document.getElementById('demographic-table').style.display = 'block';
+                        document.getElementById('submit-btn').style.display = 'none';
                         document.getElementById('demographic-table-recruitment').style.display = 'none';
                         document.getElementById('demographic-table-radial').style.display = 'none';
                         document.getElementById('ActionBtn').style.display = "block";
@@ -2657,11 +2669,18 @@ function calculateAccumulatedDemographics() {
 function updateAccumulatedDemographics() {
     const accumulatedData = calculateAccumulatedDemographics();
     const table = document.getElementById('demographicTable');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
+
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
         switch(label) {
             case 'Population':
@@ -3475,15 +3494,21 @@ function GoBackToTableRecruitment() {
 }
 function displayGroupDemographicsRecruitment(demographics) {
     const table = document.getElementById('demographicTableRecruitment');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
+
         switch(label) {
             case 'Population':
-                
                 valueCell.textContent = formatNumber(demographics.population);
                 break;
             case 'Households':
@@ -3905,11 +3930,17 @@ function calculateAccumulatedDemographicsRecruitment() {
 function updateAccumulatedDemographicsRecruitment() {
     const accumulatedData = calculateAccumulatedDemographicsRecruitment();
     const table = document.getElementById('demographicTableRecruitment');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
 
         switch(label) {
