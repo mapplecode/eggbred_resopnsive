@@ -6,6 +6,7 @@ import os
 import csv
 import mysql.connector
 from home import state_by_zipCode
+from datetime import datetime
 import time
 
 app = Flask(__name__)
@@ -148,8 +149,6 @@ def delete_region_group():
 def update_region_group():
     data = request.get_json()
     print("RECEIVED DATA FROM AJAX CALL:", data)
-    
-    # Get all required fields from the request
     group_id = data.get('groupId')
     group_name = data.get('name')
     group_color = data.get('color')
@@ -160,7 +159,7 @@ def update_region_group():
     num_developments = data.get('numDevelopments', 0)
     zip_codes = data.get('zipCodes', [])
     state = data.get('state', '')
-    label = data.get('label', 'area')  # Added label field with default value
+    label = data.get('label', 'area') 
 
     if not group_id:
         return jsonify({'status': 'error', 'message': 'Group ID is required'})
@@ -245,7 +244,35 @@ def update_region_group():
     finally:
         if connection:
             connection.close()
-         
+            
+@app.route('/save_note', methods=['POST'])
+def save_note():
+    data = request.get_json()
+    group_id = data.get('groupId')
+    note = data.get('note')
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if not group_id or not note:
+        return jsonify({'status': 'error', 'message': 'Missing group ID or note content'})
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'status': 'error', 'message': 'Failed to connect to the database'})
+    try:
+        with connection.cursor() as cursor:
+            full_note = f"{timestamp} - {note}"
+            cursor.execute("""
+                UPDATE selectedregiongroups
+                SET notes = %s
+                WHERE id = %s
+            """, (full_note, group_id))
+        connection.commit()
+        return jsonify({'status': 'success', 'message': 'Note saved successfully'})
+    except Exception as e:
+        print("Error saving note:", e)
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        connection.close()
+
+        
 @app.route('/save_regions_recruitment', methods=['POST'])
 def save_regions_recruitment():
     data = request.get_json()
@@ -463,6 +490,32 @@ def update_region_group_recruitment():
         if connection:
             connection.close()
 
+@app.route('/save_note_recruitment', methods=['POST'])
+def save_note_recruitment():
+    data = request.get_json()
+    group_id = data.get('groupId')
+    note = data.get('note')
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if not group_id or not note:
+        return jsonify({'status': 'error', 'message': 'Missing group ID or note content'})
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'status': 'error', 'message': 'Failed to connect to the database'})
+    try:
+        with connection.cursor() as cursor:
+            full_note = f"{timestamp} - {note}"
+            cursor.execute("""
+                UPDATE selectedRegionGroupsRecruitment
+                SET notes = %s
+                WHERE id = %s
+            """, (full_note, group_id))
+        connection.commit()
+        return jsonify({'status': 'success', 'message': 'Note saved successfully'})
+    except Exception as e:
+        print("Error saving note:", e)
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        connection.close()
 
 @app.route('/save_circles', methods=['POST'])
 def save_circles():

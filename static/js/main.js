@@ -268,6 +268,8 @@ function actionBtn() {
 // Close button event listner for Area development
 function closeBtn() {
     document.getElementById("CloseBtn").addEventListener("click", function(){
+        selectedGroupForDeletion = null;
+        highlightSelectedGroup();
         document.getElementById("demographic-table").style.display = "none";
     })
 }
@@ -818,27 +820,6 @@ function addControlListeners() {
                 }
             });
         }
-        const hideColorsBtn = Array.from(document.querySelectorAll('.action-btn')).find(
-            (el) => el.textContent.includes("Hide classification colours")
-        );
-        if (hideColorsBtn) {
-            hideColorsBtn.addEventListener('click', () => toggleClassificationColors(hideColorsBtn));
-        }
-        if (toggleLabelsBtn) {
-            toggleLabelsBtn.addEventListener('click', function() {
-                const isLabelsOn = toggleLabelsBtn.textContent.includes('off');
-                toggleLabelsBtn.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
-                areRegionsVisible = !isLabelsOn;
-                if (areRegionsVisible) {
-                    loadSavedRegions();
-                    updateLabels();
-                } else {
-                    labels.forEach(label => label.setMap(null));
-                    labels = [];
-                }
-                map.data.setStyle(applyStyle);
-            });
-        }
         if (backToLayerControlBtn && franchiseView && defaultView) {
             backToLayerControlBtn.addEventListener('click', function() {
                 isAreaDevClicked = false;
@@ -858,6 +839,27 @@ function addControlListeners() {
                 DemographicTableRecruitment.style.display = "none";
                 DeleteLayerButtonRadial.style.display = "none";
                 
+            });
+        }
+        const hideColorsBtn = Array.from(document.querySelectorAll('.action-btn')).find(
+            (el) => el.textContent.includes("Hide classification colours")
+        );
+        if (hideColorsBtn) {
+            hideColorsBtn.addEventListener('click', () => toggleClassificationColors(hideColorsBtn));
+        }
+        if (toggleLabelsBtn) {
+            toggleLabelsBtn.addEventListener('click', function() {
+                const isLabelsOn = toggleLabelsBtn.textContent.includes('off');
+                toggleLabelsBtn.textContent = isLabelsOn ? 'Turn labels on' : 'Turn labels off';
+                areRegionsVisible = !isLabelsOn;
+                if (areRegionsVisible) {
+                    loadSavedRegions();
+                    updateLabels();
+                } else {
+                    labels.forEach(label => label.setMap(null));
+                    labels = [];
+                }
+                map.data.setStyle(applyStyle);
             });
         }
         if (createNewAreaBtn) {
@@ -2172,7 +2174,6 @@ function handleAreaDevClick(e) {
                 updateAccumulatedDemographics();
                 document.getElementById('demographic-table').style.display = 'block';
                 // document.getElementById('submit-btn').style.display = 'none';
-                
                 document.getElementById('demographic-table-recruitment').style.display = 'none';
                 document.getElementById('demographic-table-radial').style.display = 'none';
             } else {
@@ -2221,7 +2222,7 @@ function handleAreaDevClick(e) {
                         closeBtn();
                         GoBackToTableFranchise();
                     }
-                    highlightSelectedGroup(groupIdarea);
+                    highlightSelectedGroup();
                     updateRegionAppearance(groupIdarea);
                 }
             }
@@ -2250,7 +2251,6 @@ function handleRecruitmentClick(e) {
             let currentZipsRec = zipCodeInputRec.value.split(',').map(zip => zip.trim()).filter(zip => zip);
             currentZipsRec = currentZipsRec.filter(zip => zip !== postalCode);
             zipCodeInputRec.value = currentZipsRec.join(', ');
-
             newSelectedRegionsRecruitment.splice(existingRegionIndexRec, 1);
             selectedRegionsRecruitmentDemographics.delete(placeId);
             selectedRegionsRecruitment.delete(placeId);
@@ -2321,7 +2321,6 @@ function handleRecruitmentClick(e) {
     featureLayer.style = applyStyle;
     updateLabels();
 }
-
 function handleBothClicks(e) {
     const clickedFeatureBoth = e.features[0];
     if (!clickedFeatureBoth) return;
@@ -3483,6 +3482,8 @@ function actionBtnRecruitment() {
 }
 function closeBtnRecruitment() {
     document.getElementById("CloseBtnRecruitment").addEventListener("click", function(){
+        selectedGroupForDeletionRecruitment = null;
+        highlightSelectedGroupRecruitment();
         document.getElementById("demographic-table-recruitment").style.display = "none";
     })
 }
@@ -4205,6 +4206,8 @@ function actionBtnRadial() {
 }
 function closeBtnRadial() {
     document.getElementById("CloseBtnRadial").addEventListener("click", function(){
+        selectedCircleId = null;
+        resetCircleHighlight(selectedCircleId);
         document.getElementById("demographic-table-radial").style.display = "none";
     })
 }
