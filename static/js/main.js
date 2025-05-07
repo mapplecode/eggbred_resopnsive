@@ -184,7 +184,6 @@ function refreshFeatureLayer() {
     }
 }
 
-
 async function loadSavedCircles() {
     try {
         const response = await fetch('/get_all_circles');
@@ -239,24 +238,6 @@ async function loadSavedCircles() {
     } catch (error) {
         console.error('Error during fetch:', error);
     }
-}
-function saveRegions() {
-    const selectedRegionsJSON = Array.from(selectedRegions.values());
-    const selectedRegionGroupsJSON = Array.from(selectedRegionGroups.values());
-    $.ajax({
-        url: "/save_regions",
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ selectedRegions: selectedRegionsJSON, selectedRegionGroups: selectedRegionGroupsJSON }),
-        success: function(response) {
-            if (response.success) {
-            } else {
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log(status, "Error sending data:", error);
-        }
-    });
 }
 // Action button event listner for Area development
 function actionBtn() {
@@ -827,6 +808,8 @@ function addControlListeners() {
                 isEditingArea = false;
                 isCreatingNewAreaRecruitment = false;
                 isEditingAreaRecruit = false;
+                selectedGroupForDeletion = null;
+                highlightSelectedGroup()
                 franchiseView.style.display = 'none';
                 defaultView.style.display = 'block';
                 franchiseControls.style.display = 'none';
@@ -1002,6 +985,7 @@ function addControlListeners() {
                 defaultView.style.display = 'block';
                 radialControls.style.display = 'none';
                 clearMapCircles();
+                selectedCircleId = null;
                 DemographicTable.style.display = "none";
                 DemographicTableRecruitment.style.display = "none";
                 demographicTableRadial.style.display = "none";
@@ -1088,8 +1072,12 @@ function addControlListeners() {
         }
         if (SaveBackBtnRecruitment) {
             SaveBackBtnRecruitment.addEventListener("click", function() {
-                DemographicTableRecruitment.style.display = "block";
+                localStorage.setItem('isRecruitmentClicked', 'true'); 
+                DemographicTableRecruitment.style.display = "none";
                 inputBtnRecruitment.style.display = "none";
+                finishSave();
+                // DemographicTableRecruitment.style.display = "none";
+                // inputBtnRecruitment.style.display = "none";
             })
         }
         if (returnToMapRecruitmentFromTableRecruitment) {
@@ -1152,6 +1140,8 @@ function addControlListeners() {
                 isEditingArea = false;
                 isCreatingNewAreaRecruitment = false;
                 isEditingAreaRecruit = false;
+                selectedGroupForDeletionRecruitment = null;
+                highlightSelectedGroupRecruitment();
                 recruitmentView.style.display = 'none';
                 defaultView.style.display = 'block';
                 recruitmentControls.style.display = 'none';
