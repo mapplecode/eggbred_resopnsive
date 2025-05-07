@@ -661,7 +661,6 @@ function addControlListeners() {
         const saveBtnForRadius = document.getElementById("saveBtnForRadius");
         const radiusInput = document.getElementById('typeNumber');
 
-
         const recruitmentTerritoriesBtn = document.getElementById('recruitmentTerritoriesBtn');
         const recruitmentControls = document.getElementById('recruitmentControls');
         const recruitmentView = document.getElementById('recruitmentView');
@@ -917,7 +916,6 @@ function addControlListeners() {
         if (editAreaBoundryRadial) {
             editAreaBoundryRadial.addEventListener("click", function() {
                 editradialnumber.style.display = "block";
-
                 RadialViewRight.style.display = "none";
             })
         }
@@ -5109,6 +5107,7 @@ async function handleRadiusChange(newRadius) {
         resetAccumulatedData();
         const placesInCircle = await getPlacesInCircle(center, newRadius);
         const circleData = circles.get(activeCircleId);
+        const colorToSave = selectedColor || circleData.data.color;
         if (circleData) {
             circleData.circle = activeCircle;
             circleData.data = {
@@ -5122,7 +5121,7 @@ async function handleRadiusChange(newRadius) {
             const updatedCircleData = {
                 id: activeCircleId,
                 name: circleData.data.name || '',
-                color: circleData.data.color || '#808080',
+                color: colorToSave,
                 classificationText: circleData.data.classificationText || 'Unclassified',
                 center: center,
                 radius: newRadius,
@@ -5141,9 +5140,15 @@ async function handleRadiusChange(newRadius) {
             if (result.status !== 'success') {
                 throw new Error('Failed to update circle data');
             }
-            if (accumulatedData) {
-                renderPieChartRadial(); 
+            if (selectedColor) {
+                activeCircle.setOptions({
+                    fillColor: selectedColor,
+                    strokeColor: selectedColor
+                });
             }
+            // if (accumulatedData) {
+            //     renderPieChartRadial(); 
+            // }
         }
     } catch (error) {
         console.error('Error updating circle:', error);
