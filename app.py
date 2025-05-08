@@ -228,7 +228,7 @@ def update_region_group():
                     group_id,
                     region.get('color', 'rgb(0,0,0)'),
                     region.get('postalCode', '00000'),
-                    region.get('classificationText', 'Default Classification'),
+                    region.get('In Negotiation'),
                     json.dumps(region.get('coordinates', []))
                 ))
 
@@ -304,7 +304,7 @@ def save_regions_recruitment():
                         group['name'],
                         group['color'],
                         json.dumps(group['demographics']),
-                        group.get('classificationText', 'Default Classification'),
+                        group.get('Under Construction'),
                         group.get('recruitmentArea', ''),
                         group.get('PotStoreCount', 0),
                         zipCodesRecruitment,  # Store zip codes as a single string
@@ -409,7 +409,7 @@ def update_region_group_recruitment():
     group_name = data.get('name')
     group_color = data.get('color')
     demographics = data.get('demographics', {})
-    classification_text = data.get('classificationText', "Unclassified")
+    classification_text = data.get('classificationText', "Under Construction")
     regions = data.get('regions', [])
     recruitmentArea = data.get('recruitmentArea', '')
     PotStoreCount = data.get('PotStoreCount', 0)

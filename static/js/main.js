@@ -657,7 +657,7 @@ function addControlListeners() {
         const editradialnumber =  document.getElementById("editradialnumber");
         const editAreaBoundryRadial = document.getElementById("editAreaBoundryRadial");
         const backFromEditRadial = document.getElementById("backFromEditRadial");
-        const DeleteLayerButtonRadial = document.getElementById("DeleteLayerButton");
+        const DeleteLayerButtonRadial = document.getElementById("DeleteLayerButtonRadial");
         const saveBtnForRadius = document.getElementById("saveBtnForRadius");
         const radiusInput = document.getElementById('typeNumber');
 
@@ -890,7 +890,9 @@ function addControlListeners() {
         if (saveBackBtn) {
             saveBackBtn.addEventListener("click", function() {
                 DemographicTable.style.display = "block";
-                inputBtn.style.display = "none";
+                inputBtn.style.display = "block";
+                localStorage.setItem('isAreaDevClicked', 'true');
+                finishSave();
             })
         }
         function getDragAfterElement(container, y) {
@@ -1219,14 +1221,16 @@ function addControlListeners() {
     initializeColorOptions();
     initializeEventListeners();
     initializeCreateNewAreaButtons();
-    document.querySelectorAll(".action-btn").forEach(button => {
-        if (button.textContent === "Table view" || button.textContent === "Demographic report") {
-          button.addEventListener("click", function() {
-            document.getElementById("map-container").style.display = "none";
-            document.getElementById("tableView").style.display = "block";
-            populateTable();
-          });
-        }
+    document.getElementById("tableViewBtn").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableView").style.display = "block";
+        populateTable();
+    });
+    
+    document.getElementById("demographic").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableView").style.display = "block";
+        populateTable();
     });
     document.getElementById("exportToCSV").addEventListener("click", exportToCSV);
     document.getElementById("DownloadDemographicbreakdown").addEventListener("click", exportToCSV);
@@ -1241,25 +1245,29 @@ function addControlListeners() {
             });
         }
     });
-    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
-    //     const prefix = document.getElementById('prefixInput').value;
-    //     $('#editLabelModal').modal('hide');
-    // });
-    document.querySelectorAll(".action-btn").forEach(button => {
-        if (button.textContent === "Table View " || button.textContent === "Demographic Report") {
-          button.addEventListener("click", function() {
+    document.getElementById("tableViewBtnRadial").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRadial").style.display = "block";
+        populateTableRadial();
+    });
+    document.getElementById("demographicRadial").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRadial").style.display = "block";
+        populateTableRadial();
+    });
+    document.getElementById("tableViewBtnRecruitment").addEventListener("click", function() {
             document.getElementById("map-container").style.display = "none";
             document.getElementById("tableViewRecruitment").style.display = "block";
             populateTableRecruitment();
-          });
-        }
+    });
+    document.getElementById("demographicRecruitment").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRecruitment").style.display = "block";
+        populateTableRecruitment();
     });
     document.getElementById("exportToCSVRecruitment").addEventListener("click", exportToCSVRecruitment);
     document.getElementById("DownloadDemographicbreakdownRecruitment").addEventListener("click", exportToCSVRecruitment);
-    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
-    //     const prefixRecruitment = document.getElementById('prefixInput').value;
-    //     $('#editLabelModal').modal('hide');
-    // });
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     initializeColorOptionsRadial();
     initializeEventListenersRadial();
@@ -1274,6 +1282,7 @@ function addControlListeners() {
         }
     });
     document.getElementById("exportToCSVRadial").addEventListener("click", exportToCSVRadial);
+    document.getElementById("DownloadDemographicbreakdown").addEventListener("click", exportToCSVRadial);
     document.getElementById("returnToMapFromTableRadial").addEventListener("click", returnToMapRadial);
     // document.getElementById('saveLabelChanges').addEventListener('click', function() {
     //     const prefixRadial = document.getElementById('prefixInput').value;
@@ -1384,10 +1393,12 @@ function populateTable() {
     const tableBody = document.querySelector("#dataTable tbody");
     tableBody.innerHTML = "";
     const savedRegions = Array.from(selectedRegions.values());
+    console.log(selectedRegions.values());
     const groupedRegions = {};
     savedRegions.forEach(region => {
         if (!groupedRegions[region.groupId]) {
             groupedRegions[region.groupId] = {
+                id: region.groupId,
                 name: region.displayName,
                 color: region.color,
                 classifications: new Set()
@@ -1398,12 +1409,11 @@ function populateTable() {
     Object.values(groupedRegions).forEach(group => {
         const row = document.createElement("tr");
         const classifications = Array.from(group.classifications).join(", ");
-
         row.innerHTML = `
             <td>${group.name}</td>
-            <td></td>
-            <td style="background-color: ${group.color}; color: #fff;">
-                ${classifications}
+            <td>${group.id}</td>
+            <td>
+                In Negotiation
             </td>
         `;
         tableBody.appendChild(row);
@@ -1418,8 +1428,9 @@ function exportToCSV() {
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
+    const date = new Date();
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "franchise_data.csv");
+    link.setAttribute("download", `Franchise_data_${date.getFullYear()}_${(date.getMonth() + 1).toString().padStart(2, '0')}_${date.getDate().toString().padStart(2, '0')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -3642,6 +3653,7 @@ function populateTableRecruitment() {
     savedRegions.forEach(region => {
         if (!groupedRegions[region.groupId]) {
             groupedRegions[region.groupId] = {
+                id: region.groupId,
                 name: region.displayName,
                 color: region.color,
                 classifications: new Set()
@@ -3654,7 +3666,7 @@ function populateTableRecruitment() {
         const classifications = Array.from(group.classifications).join(", ");
         row.innerHTML = `
             <td>${group.name}</td>
-            <td></td>
+            <td>${group.id}</td>
             <td style="background-color: ${group.color}; color: #fff;">
                 ${classifications}
             </td>
@@ -3671,8 +3683,9 @@ function exportToCSVRecruitment() {
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
+    const date = new Date();
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "franchise_data.csv");
+    link.setAttribute("download", `recruitment_data_${date.getFullYear()}_${(date.getMonth() + 1).toString().padStart(2, '0')}_${date.getDate().toString().padStart(2, '0')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -4736,41 +4749,99 @@ function renderPieChartRadial() {
     layerInfoView.appendChild(legendDiv);
 }
 function deleteCircleFromTable(circleId) {
-    const circleData = circles.get(circleId);
-    if (circleData) {
-        circleData.circle.setMap(null);
-        if (circleData.label) {
-            circleData.label.setMap(null);
+    $.ajax({
+        url: `/delete_circle/${circleId}`,
+        method: "DELETE",
+        success: function(response) {
+            if (response.status === 'success') {
+                // Remove the circle from map
+                const circleData = circles.get(circleId);
+                if (circleData) {
+                    if (circleData.circle) {
+                        circleData.circle.setMap(null);  
+                    }
+                    if (circleData.label) {
+                        circleData.label.setMap(null);  
+                    }
+                }
+
+                // Remove from circles Map
+                circles.delete(circleId);
+
+                // Remove row from table
+                const tableBody = document.querySelector("#dataTableRadial tbody");
+                const rows = tableBody.querySelectorAll("tr");
+                rows.forEach(row => {
+                    const idCell = row.querySelector("td:nth-child(2)");
+                    if (idCell && idCell.textContent === String(circleId)) {
+                        tableBody.removeChild(row);
+                    }
+                });
+
+                // Hide modal and related UI
+                $('#delet-area').modal('hide');
+                document.getElementById("demographic-table-radial").style.display = "none";
+                document.getElementById("RadialViewRight").style.display = "none";
+            } else {
+                console.error("Error deleting circle:", response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX error while deleting circle:", status, error);
+        },
+        complete: function() {
+            console.log("Circle deletion process completed.");
         }
-        circles.delete(circleId);
-        saveCirclesToLocalStorage();
-        populateTableRadial();
-    }
+    });
 }
-function populateTableRadial(data) {
+
+function populateTableRadial() {
     const tableBody = document.querySelector("#dataTableRadial tbody");
     const filterRow = tableBody.querySelector("tr:first-child");
     tableBody.innerHTML = "";
-    tableBody.appendChild(filterRow);
+    if (filterRow) {
+        tableBody.appendChild(filterRow);
+    }
+
     const savedCircles = Array.from(circles.values());
+    console.log(savedCircles);
+
     savedCircles.forEach(circleData => {
         const row = document.createElement("tr");
-        const uniqueKey = `${circleData.circle.getCenter().lat().toFixed(4)}-${circleData.circle.getCenter().lng().toFixed(4)}-${circleData.circle.getRadius().toFixed(2)}`;
-        row.innerHTML = `
-            <td>${circleData.data.name}</td>
-            <td>${uniqueKey}</td>
-            <td style="background-color: ${circleData.data.color}; color: white;">
-                Circle
-            </td>
-            <td>
-                <button class="btn btn-sm btn-danger" onclick="deleteCircleFromTable('${circleData.circle.id}')">
-                    Delete
-                </button>
-            </td>
-        `;
+
+        // Name cell
+        const nameCell = document.createElement("td");
+        nameCell.textContent = circleData.data.name;
+        row.appendChild(nameCell);
+
+        // ID cell
+        const idCell = document.createElement("td");
+        idCell.textContent = circleData.circle.id;
+        row.appendChild(idCell);
+
+        // Classification cell
+        const classificationCell = document.createElement("td");
+        classificationCell.textContent = circleData.data.classificationText || '';
+        classificationCell.style.backgroundColor = circleData.data.color;
+        classificationCell.style.color = "white";
+        row.appendChild(classificationCell);
+
+        // Delete button cell
+        const deleteCell = document.createElement("td");
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-sm btn-danger";
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener("click", () => {
+            deleteCircleFromTable(circleData.circle.id);
+        });
+        deleteCell.appendChild(deleteButton);
+        row.appendChild(deleteCell);
+
+        // Append the row to the table body
         tableBody.appendChild(row);
     });
 }
+
 function exportToCSVRadial() {
     const savedCircles = Array.from(circles.values());
     let csvContent = "Name,Latitude,Longitude,Radius (meters),Color\n";
