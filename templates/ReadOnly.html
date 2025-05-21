@@ -119,20 +119,20 @@
         <div class="container-fluid">
             <!-- Left Side Icons and Mobile Menu Button -->
             <div class="d-flex align-items-center">
-                <button class="btn btn-outline-secondary d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#leftSidebarOffcanvas" aria-controls="leftSidebarOffcanvas">
+                <button class="btn btn-outline-secondary d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#leftSidebarOffcanvas" aria-controls="leftSidebarOffcanvas" disabled>
                     <i class="fas fa-bars"></i>
                 </button>
                 <!-- Removed the d-none d-lg-inline classes from buttons that should be visible on mobile -->
-                <button id="mnu-layer-control" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Layer Control">
+                <button id="mnu-layer-control" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Layer Control" disabled>
                     <img src="/static/img/action-black.png" alt="Layer Control" style="height: 24px;">
                 </button>
-                <button id="mnu-legend" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Legend">
+                <button id="mnu-legend" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Legend" disabled>
                     <img src="/static/img/legend-black.png" alt="Legend" style="height: 24px;">
                 </button>
-                <button id="mnu-search" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Search">
+                <button id="mnu-search" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Search" disabled>
                     <img src="/static/img/search-black.png" alt="Search" style="height: 24px;">
                 </button>
-                <button id="topbar-views" class="btn btn-outline-secondary me-2" onclick="window.location.href='/folder';" data-bs-toggle="tooltip" title="Views">
+                <button id="topbar-views" class="btn btn-outline-secondary me-2" onclick="#" data-bs-toggle="tooltip" title="Views" disabled>
                     <img src="/static/img/views-black.png" alt="Views" style="height: 24px;">
                 </button>
             </div>
@@ -146,16 +146,16 @@
     
             <!-- Right Side Icons -->
             <div class="d-flex align-items-center">
-                <button id="mnu-notifications" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Notifications">
+                <button id="mnu-notifications" class="btn btn-outline-secondary me-2" data-bs-toggle="tooltip" title="Notifications" disabled>
                     <img src="/static/img/notifications-black.png" alt="Notifications" style="height: 24px;">
                 </button>
-                <a id="mnuHelpCentre" class="btn btn-outline-secondary me-2" href="https://support.vision-mapping.com/hc" target="_blank" data-bs-toggle="tooltip" title="Help Centre">
+                <a id="mnuHelpCentre" class="btn btn-outline-secondary me-2" href="#" target="_blank" data-bs-toggle="tooltip" title="Help Centre">
                     <img src="/static/img/help-black.png" alt="Help" style="height: 24px;">
                 </a>
-                <a id="userAdmin" class="btn btn-outline-secondary me-2" onclick="window.location.href='/folder';" data-bs-toggle="tooltip" title="User Admin">
+                <a id="userAdmin" class="btn btn-outline-secondary me-2" onclick="#" data-bs-toggle="tooltip" title="User Admin">
                     <img src="/static/img/settings-black.png" alt="Settings" style="height: 24px;">
                 </a>
-                <a id="logout" class="btn btn-outline-secondary" href="/Login/Login/Logout" data-bs-toggle="tooltip" title="Logout">
+                <a id="logout" class="btn btn-outline-secondary" href="#" data-bs-toggle="tooltip" title="Logout">
                     <img src="/static/img/logout-black.png" alt="Logout" style="height: 24px;">
                 </a>
     
@@ -178,7 +178,7 @@
                     <button id="franchiseTerritoriesBtnMob" class="btn btn-outline-secondary w-100">
                         Area-Development
                     </button>
-                    <div id="franchiseControlsMob" class="mt-2" style="display: none;">
+                    <div id="franchiseControlsMob" class="mt-2 d-none" style="display: none;">
                         <div class="btn-group w-100 d-flex justify-content-between">
                             <button id="RenameMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-edit me-1"></i>Rename
@@ -186,7 +186,7 @@
                             <button id="toggleLabelsBtnMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-tags me-1"></i>Turn labels off
                             </button>
-                            <button id="menuBtnMob" class="btn btn-outline-secondary">
+                            <button id="menuBtnMob" class="btn btn-outline-secondary" disabled>
                                 <i class="fas fa-plus-circle me-1"></i>New
                             </button>
                         </div>
@@ -197,7 +197,7 @@
                     <button id="RadialAnalysisBtnMob" class="btn btn-outline-secondary w-100">
                         Radial Analysis
                     </button>
-                    <div id="radialControlsMob" class="mt-2" style="display: none;">
+                    <div id="radialControlsMob" class="mt-2 d-none" style="display: none;">
                         <div class="btn-group w-100 d-flex justify-content-between">
                             <button id="RenameradialMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-edit me-2"></i>Rename
@@ -205,7 +205,7 @@
                             <button id="toggleLabelsBtnRadialMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-tags me-2"></i>Turn labels off
                             </button>
-                            <button id="menuBtnRadialMob" class="btn btn-outline-secondary">
+                            <button id="menuBtnRadialMob" class="btn btn-outline-secondary" disabled>
                                 <i class="fas fa-plus-circle me-1"></i>New
                             </button>
                         </div>
@@ -215,7 +215,7 @@
                     <button id="recruitmentTerritoriesBtnMob" class="btn btn-outline-secondary w-100">
                         Recruitment Territories
                     </button>
-                    <div id="recruitmentControlsMob" class="mt-2" style="display: none;">
+                    <div id="recruitmentControlsMob" class="mt-2 d-none" style="display: none;">
                         <div class="btn-group w-100 d-flex justify-content-between">
                             <button id="RenamerecruitmentMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-edit me-2"></i>Rename
@@ -223,7 +223,7 @@
                             <button id="toggleLabelsBtnrecruitmentMob" class="btn btn-outline-secondary me-1">
                                 <i class="fas fa-tags me-2"></i>Turn labels off
                             </button>
-                            <button id="menuBtnrecruitmentMob" class="btn btn-outline-secondary">
+                            <button id="menuBtnrecruitmentMob" class="btn btn-outline-secondary" disabled>
                                 <i class="fas fa-plus-circle me-1"></i>New
                             </button>
                         </div>
@@ -997,7 +997,7 @@
                         <button id="franchiseTerritoriesBtn" class="btn btn-outline-secondary w-100">
                             Area-Development
                         </button>
-                        <div id="franchiseControls" class="mt-2" style="display: none;">
+                        <div id="franchiseControls" class="mt-2 d-none" style="display: none;">
                             <div class="btn-group w-100 d-flex justify-content-between">
                                 <button id="Rename" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-edit me-1"></i>Rename
@@ -1005,7 +1005,7 @@
                                 <button id="toggleLabelsBtn" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-tags me-1"></i>Turn labels off
                                 </button>
-                                <button id="menuBtn" class="btn btn-outline-secondary">
+                                <button id="menuBtn" class="btn btn-outline-secondary" disabled>
                                     <i class="fas fa-plus-circle me-1"></i>New
                                 </button>
                             </div>
@@ -1016,7 +1016,7 @@
                         <button id="RadialAnalysisBtn" class="btn btn-outline-secondary w-100">
                             Radial Analysis
                         </button>
-                        <div id="radialControls" class="mt-2" style="display: none;">
+                        <div id="radialControls" class="mt-2 d-none" style="display: none;">
                             <div class="btn-group w-100 d-flex justify-content-between">
                                 <button id="Renameradial" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-edit me-1"></i>Rename
@@ -1024,7 +1024,7 @@
                                 <button id="toggleLabelsBtnRadial" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-tags me-1"></i>Turn labels off
                                 </button>
-                                <button id="menuBtnRadial" class="btn btn-outline-secondary">
+                                <button id="menuBtnRadial" class="btn btn-outline-secondary" disabled>
                                     <i class="fas fa-plus-circle me-1"></i>New
                                 </button>
                             </div>
@@ -1034,7 +1034,7 @@
                         <button id="recruitmentTerritoriesBtn" class="btn btn-outline-secondary w-100">
                             Recruitment Territories
                         </button>
-                        <div id="recruitmentControls" class="mt-2" style="display: none;">
+                        <div id="recruitmentControls" class="mt-2 d-none" style="display: none;">
                             <div class="btn-group w-100 d-flex justify-content-between">
                                 <button id="Renamerecruitment" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-edit me-1"></i>Rename
@@ -1042,7 +1042,7 @@
                                 <button id="toggleLabelsBtnrecruitment" class="btn btn-outline-secondary me-1">
                                     <i class="fas fa-tags me-1"></i>Turn labels off
                                 </button>
-                                <button id="menuBtnrecruitment" class="btn btn-outline-secondary">
+                                <button id="menuBtnrecruitment" class="btn btn-outline-secondary" disabled>
                                     <i class="fas fa-plus-circle me-1"></i>New
                                 </button>
                             </div>
