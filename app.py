@@ -20,6 +20,7 @@ def connect_to_database():
             password="root",
             database="eggbred$newDB"
         )
+        print("Connection successfull")
         return mydb
     except mysql.connector.Error as err:
         print(f"Error: {err}")
@@ -521,10 +522,9 @@ def save_note_recruitment():
 def save_circles():
     try:
         data = request.get_json()
+        conn = connect_to_database()
         if not data:
             return jsonify({"success": False, "message": "No data received"}), 400
-        
-        conn = connect_to_database()
         with conn.cursor() as cursor:
             for key, circle in data.items():
                 query = """
@@ -532,22 +532,24 @@ def save_circles():
                         id, name, color, classification_text, 
                         center_lat, center_lng, radius, 
                         demographics, places, 
-                        franchiseeNumber, city, state
+                        franchiseeNumber, city, state, autocomplete_value
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
-                    color = VALUES(color),
-                    classification_text = VALUES(classification_text),
-                    center_lat = VALUES(center_lat),
-                    center_lng = VALUES(center_lng),
-                    radius = VALUES(radius),
-                    demographics = VALUES(demographics),
-                    places = VALUES(places),
-                    franchiseeNumber = VALUES(franchiseeNumber),
-                    city = VALUES(city),
-                    state = VALUES(state)
+                        name = VALUES(name),
+                        color = VALUES(color),
+                        classification_text = VALUES(classification_text),
+                        center_lat = VALUES(center_lat),
+                        center_lng = VALUES(center_lng),
+                        radius = VALUES(radius),
+                        demographics = VALUES(demographics),
+                        places = VALUES(places),
+                        franchiseeNumber = VALUES(franchiseeNumber),
+                        city = VALUES(city),
+                        state = VALUES(state),
+                        autocomplete_value = VALUES(autocomplete_value)
                 """
+
                 cursor.execute(query, (
                     circle['id'],
                     circle['name'],
@@ -560,8 +562,10 @@ def save_circles():
                     json.dumps(circle['places']),
                     circle.get('franchiseeNumber', ''),
                     circle.get('city', ''),
-                    circle.get('state', '')
+                    circle.get('state', ''),
+                    circle.get('autocomplete_value', '')
                 ))
+
         # Commit the transaction and close the connection
         conn.commit()
         return jsonify({'status': 'success', 'message': 'Regions saved successfully!'})
@@ -679,9 +683,9 @@ def load_csv_data():
 def hello_world():
     return render_template('index.html')
 
-@app.route("/readOnly")
-def readOnly():
-    return render_template('readOnly.html')
+@app.route('/readonly')
+def readonly():
+    return render_template('ReadOnly.html')
 
 @app.route('/load_button_names', methods=['GET'])
 def load_button_names():

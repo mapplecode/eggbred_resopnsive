@@ -229,7 +229,6 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn btn-sidebar btn-outline-secondary">Read Only Mode</button>
             </div>
             <div id="franchiseViewMob" class="p-3 bg-light border-top h-100" style="display: none;">
                 <div class="panel-header mb-3">
@@ -537,6 +536,8 @@
                             <td>Population</td>
                             <td class="text-end">0</td>
                         </tr>
+                    </tbody>
+                    <tbody id="extra-rows" style="display: none;">
                         <tr>
                             <td>Households</td>
                             <td class="text-end">0</td>
@@ -583,6 +584,11 @@
                         </tr>
                     </tbody>
                 </table>
+                <div class="text-center mb-2">
+                    <button id="show-more-btn-mob" class="btn btn-link">
+                        ⬇ Show More
+                    </button>
+                </div>
                 <!-- Action and Control Buttons for Mobile -->
                 <div class="d-grid gap-2">
                     <button id="ActionBtnMob" type="button" class="btn btn-info" style="display: none;">
@@ -643,6 +649,8 @@
                             <td>Population</td>
                             <td class="text-end">0</td>
                         </tr>
+                    </tbody>
+                    <tbody id="moreDemographicsRecMob" style="display: none;">>
                         <tr>
                             <td>Households</td>
                             <td class="text-end">0</td>
@@ -689,6 +697,11 @@
                         </tr>
                     </tbody>
                 </table>
+                <div class="text-center mb-2">
+                    <button id="show-more-btn-recruitment-mob" class="btn btn-link">
+                        ⬇ Show More
+                    </button>
+                </div>
                 <!-- Action and Control Buttons for Mobile -->
                 <div class="d-grid gap-2">
                     <button id="ActionBtnRecruitmentMob" type="button" class="btn btn-info" style="display: none;">
@@ -858,7 +871,7 @@
                     <div class="col-md-12">
                         <div class="section text-center">
                             <h3 class="h6 fw-bold mb-2 text-secondary">Reports and Exports</h3>
-                            <button class="btn btn-outline-secondary w-100 mb-2">Demographic report</button>
+                            <button class="btn btn-outline-secondary w-100 mb-2" id="demographicMob">Demographic report</button>
                             <button class="btn btn-outline-secondary w-100 mb-2" id="DownloadDemographicbreakdownMob">Download Demographic breakdown</button>
                         </div>
                     </div>
@@ -895,7 +908,7 @@
                     <div class="col-md-12">
                         <div class="section text-center">
                             <h3 class="h6 fw-bold mb-2 text-secondary">Reports and Exports</h3>
-                            <button class="btn btn-outline-secondary w-100 mb-2">Demographic report</button>
+                            <button class="btn btn-outline-secondary w-100 mb-2" id="demographicRadialMob">Demographic report</button>
                             <button class="btn btn-outline-secondary w-100 mb-2" id="DownloadDemographicbreakdownRadialMob">Download Demographic breakdown</button>
                         </div>
                     </div>
@@ -932,7 +945,7 @@
                     <div class="col-md-12">
                         <div class="section text-center">
                             <h3 class="h6 fw-bold mb-2 text-secondary">Reports and Exports</h3>
-                            <button class="btn btn-outline-secondary w-100 mb-2">Demographic report</button>
+                            <button class="btn btn-outline-secondary w-100 mb-2" id="demographicRecruitmentMob">Demographic report</button>
                             <button class="btn btn-outline-secondary w-100 mb-2" id="DownloadDemographicbreakdownRecruitmentMob">Download Demographic breakdown</button>
                         </div>
                     </div>
@@ -1035,7 +1048,7 @@
                             </div>
                         </div>
                     </div>
-                    <button class="btn btn-sidebar btn-outline-secondary w-100">Read Only Mode</button>
+                    <a href="/readonly" class="btn btn-sidebar btn-outline-secondary d-none">Read Only Mode</a>
                 </div>
                 <!-- INSIDE LAYER FOR AREA DEVELOPMENT -->
                 <div id="franchiseView" class="p-3 bg-light border-end h-100" style="display: none;">
@@ -1864,6 +1877,30 @@
     <script>
         document.getElementById("show-more-btn-recruitment").addEventListener("click", function () {
             const extraRowsRec = document.getElementById("moreDemographics");
+            if (extraRowsRec.style.display === "none") {
+                extraRowsRec.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRowsRec.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
+        });
+    </script>
+    <script>
+        document.getElementById("show-more-btn-mob").addEventListener("click", function () {
+            const extraRows = document.getElementById("extra-rows-mob");
+            if (extraRows.style.display === "none") {
+                extraRows.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRows.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
+        });
+    </script>
+    <script>
+        document.getElementById("show-more-btn-recruitment-mob").addEventListener("click", function () {
+            const extraRowsRec = document.getElementById("moreDemographicsRecMob");
             if (extraRowsRec.style.display === "none") {
                 extraRowsRec.style.display = "";
                 this.innerHTML = "⬆ Show Less";

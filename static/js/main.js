@@ -1010,7 +1010,7 @@ function addControlListeners() {
             submit_btnRadial.addEventListener('click', function() {
                 inputBtnRadial.style.display = "block";
                 demographicTableRadial.style.display = "none";
-                document.getElementById("autocomplete").value = '';
+                // document.getElementById("autocomplete").value = '';
             })
         }
         if (SubmitButtonAutoComplete) {
@@ -1226,14 +1226,15 @@ function addControlListeners() {
         document.getElementById("tableView").style.display = "block";
         populateTable();
     });
-    
+     
     document.getElementById("demographic").addEventListener("click", function() {
         document.getElementById("map-container").style.display = "none";
-        document.getElementById("tableView").style.display = "block";
+        document.getElementById("tableView").s5tyle.display = "block";
         populateTable();
     });
     document.getElementById("exportToCSV").addEventListener("click", exportToCSV);
     document.getElementById("DownloadDemographicbreakdown").addEventListener("click", exportToCSV);
+    document.getElementById("DownloadDemographicbreakdownRadial").addEventListener("click", exportToCSVRadial);
     const layerInfoBtn = Array.from(document.querySelectorAll('.action-btn')).find(
         (el) => el.textContent.includes("Layer information")
     );
@@ -3668,7 +3669,7 @@ function populateTableRecruitment() {
             <td>${group.name}</td>
             <td>${group.id}</td>
             <td style="background-color: ${group.color}; color: #fff;">
-                ${classifications}
+                Under Constructon
             </td>
         `;
         tableBody.appendChild(row);
@@ -4570,7 +4571,6 @@ async function getPlacesInCircle(center, radius) {
 async function createCircleAtSelectedLocation() {
     resetDemographicTable(); 
     isCircleSaved = false; 
-
     if (selectedLocation) {
         if (currentMarker) {
             currentMarker.setMap(null);
@@ -4625,7 +4625,7 @@ async function createCircleAtSelectedLocation() {
                 circles.delete(newCircleId);
                 activeCircle = null;
                 activeCircleId = null;
-                resetDemographicTable(); // Clear demographic data
+                resetDemographicTable(); 
                 google.maps.event.removeListener(mapClickListener);
                 document.getElementById("ActionBtnRadial").style.display = "block";
                 document.getElementById("CloseBtnRadial").style.display = "block";
@@ -4641,7 +4641,6 @@ async function createCircleAtSelectedLocation() {
         showInputPanel();
     }
 }
-
 
 function showInputPanel() {
     const panel = document.getElementById("demographic-table-radial");
@@ -4802,31 +4801,21 @@ function populateTableRadial() {
     if (filterRow) {
         tableBody.appendChild(filterRow);
     }
-
     const savedCircles = Array.from(circles.values());
     console.log(savedCircles);
-
     savedCircles.forEach(circleData => {
         const row = document.createElement("tr");
-
-        // Name cell
         const nameCell = document.createElement("td");
         nameCell.textContent = circleData.data.name;
         row.appendChild(nameCell);
-
-        // ID cell
         const idCell = document.createElement("td");
         idCell.textContent = circleData.circle.id;
         row.appendChild(idCell);
-
-        // Classification cell
         const classificationCell = document.createElement("td");
         classificationCell.textContent = circleData.data.classificationText || '';
         classificationCell.style.backgroundColor = circleData.data.color;
         classificationCell.style.color = "white";
         row.appendChild(classificationCell);
-
-        // Delete button cell
         const deleteCell = document.createElement("td");
         const deleteButton = document.createElement("button");
         deleteButton.className = "btn btn-sm btn-danger";
@@ -4836,8 +4825,6 @@ function populateTableRadial() {
         });
         deleteCell.appendChild(deleteButton);
         row.appendChild(deleteCell);
-
-        // Append the row to the table body
         tableBody.appendChild(row);
     });
 }
@@ -5011,11 +4998,19 @@ function handleSaveRadial() {
 }
 function saveCirclesToLocalStorage() {
     return new Promise((resolve, reject) => {
-        const circleData = {};
-        circles.forEach((value, key) => {
-            const circle = value.circle;
-            const data = {
-                id: key,
+        const autocompleteInput = document.getElementById("autocomplete").value || '';
+
+        if (!activeCircleId || !circles.has(activeCircleId)) {
+            reject("No active circle selected");
+            return;
+        }
+
+        const value = circles.get(activeCircleId);
+        const circle = value.circle;
+
+        const circleData = {
+            [activeCircleId]: {
+                id: activeCircleId,
                 name: value.data.name || '',
                 color: value.data.color,
                 classificationText: value.data.classificationText || 'Unclassified',
@@ -5028,12 +5023,12 @@ function saveCirclesToLocalStorage() {
                 city: value.data.city || '',
                 state: value.data.state || '',
                 demographics: value.data.demographics || null,
-                places: value.data.places || []
-            };
-            circleData[key] = data;
-        });
-        
-        $.ajax({
+                places: value.data.places || [],
+                autocomplete_value: autocompleteInput
+            }
+        };
+
+         $.ajax({
             url: "/save_circles",
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
@@ -5070,8 +5065,10 @@ function saveCirclesToLocalStorage() {
                 console.error("XHR status:", xhr.status);
             }
         });
+        document.getElementById("autocomplete").value = '';
     });
 }
+
 function initializeEventListenersRadial() {
     document.getElementById('submit-btnRadial')?.addEventListener('click', function() {
         handleSubmitRadial();

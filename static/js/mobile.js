@@ -184,7 +184,6 @@ function refreshFeatureLayer() {
     }
 }
 
-
 async function loadSavedCircles() {
     try {
         const response = await fetch('/get_all_circles');
@@ -240,24 +239,6 @@ async function loadSavedCircles() {
         console.error('Error during fetch:', error);
     }
 }
-function saveRegions() {
-    const selectedRegionsJSON = Array.from(selectedRegions.values());
-    const selectedRegionGroupsJSON = Array.from(selectedRegionGroups.values());
-    $.ajax({
-        url: "/save_regions",
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ selectedRegions: selectedRegionsJSON, selectedRegionGroups: selectedRegionGroupsJSON }),
-        success: function(response) {
-            if (response.success) {
-            } else {
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log(status, "Error sending data:", error);
-        }
-    });
-}
 // Action button event listner for Area development
 function ActionBtnMob() {
     document.getElementById("ActionBtnMob").addEventListener("click", function(){
@@ -268,6 +249,8 @@ function ActionBtnMob() {
 // Close button event listner for Area development
 function CloseBtnMob() {
     document.getElementById("CloseBtnMob").addEventListener("click", function(){
+        selectedGroupForDeletion = null;
+        highlightSelectedGroup();
         document.getElementById("demographic-table-mob").style.display = "none";
     })
 }
@@ -1249,14 +1232,16 @@ function addControlListeners() {
     initializeColorOptions();
     initializeEventListeners();
     initializeCreateNewAreaButtons();
-    document.querySelectorAll(".action-btn").forEach(button => {
-        if (button.textContent === "Table view" || button.textContent === "Demographic report") {
-          button.addEventListener("click", function() {
-            document.getElementById("map").style.display = "none";
-            document.getElementById("tableView").style.display = "block";
-            populateTable();
-          });
-        }
+    document.getElementById("tableViewBtnMob").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewMob").style.display = "block";
+        populateTable();
+    });
+    
+    document.getElementById("demographicMob").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewMob").style.display = "block";
+        populateTable();
     });
     document.getElementById("exportToCSVMob").addEventListener("click", exportToCSVMob);
     document.getElementById("DownloadDemographicbreakdownMob").addEventListener("click", exportToCSVMob);
@@ -1271,20 +1256,28 @@ function addControlListeners() {
             });
         }
     });
-    // document.getElementById('saveLabelChanges').addEventListener('click', function() {
-    //     const prefix = document.getElementById('prefixInput').value;
-    //     $('#editLabelModal').modal('hide');
-    // });
-    document.querySelectorAll(".action-btn").forEach(button => {
-        if (button.textContent === "Table View " || button.textContent === "Demographic Report") {
-          button.addEventListener("click", function() {
-            document.getElementById("map").style.display = "none";
+    document.getElementById("tableViewBtnRadialMob").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRadialMob").style.display = "block";
+        populateTableRadial();
+    });
+    document.getElementById("demographicRadialMob").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRadialMob").style.display = "block";
+        populateTableRadial();
+    });
+    document.getElementById("DownloadDemographicbreakdownRadialMob").addEventListener("click", exportToCSVRadialMob);
+    document.getElementById("tableViewBtnRecruitmentMob").addEventListener("click", function() {
+            document.getElementById("map-container").style.display = "none";
             document.getElementById("tableViewRecruitmentMob").style.display = "block";
             populateTableRecruitment();
-          });
-        }
     });
-    // document.getElementById("exportToCSVRecruitmentMob").addEventListener("click", exportToCSVRecruitmentMob);
+    document.getElementById("demographicRecruitmentMob").addEventListener("click", function() {
+        document.getElementById("map-container").style.display = "none";
+        document.getElementById("tableViewRecruitmentMob").style.display = "block";
+        populateTableRecruitment();
+    });
+    document.getElementById("exportToCSVRecruitmentMob").addEventListener("click", exportToCSVRecruitmentMob);
     document.getElementById("DownloadDemographicbreakdownRecruitmentMob").addEventListener("click", exportToCSVRecruitmentMob);
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     initializeColorOptionsRadial();
@@ -1440,8 +1433,9 @@ function exportToCSVMob() {
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
+    const date = new Date();
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "franchise_data.csv");
+    link.setAttribute("download", `Franchise_data_${date.getFullYear()}_${(date.getMonth() + 1).toString().padStart(2, '0')}_${date.getDate().toString().padStart(2, '0')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1706,7 +1700,6 @@ function handleAreaDevSave() {
                     demographics: selectedRegionsDemographics.get(region.placeId) || {}
                 }))
             };
-
             $.ajax({
                 url: "/update_region_group",
                 method: "POST",
@@ -1724,7 +1717,6 @@ function handleAreaDevSave() {
                         existingGroup.zipCodes = zipCodes;
                         existingGroup.state = state;
                         existingGroup.regions = newSelectedRegions.map(region => region.placeId);
-
                         newSelectedRegions.forEach(region => {
                             const updatedRegion = {
                                 ...region,
@@ -2221,6 +2213,7 @@ function handleAreaDevClick(e) {
                         selectedGroupForDeletion = groupIdarea;
                         displayGroupDemographics(grouparea.demographics);
                         document.getElementById('demographic-table-mob').style.display = 'block';
+                        document.getElementById('submit-btn-mob').style.display = 'none';
                         document.getElementById('demographic-table-recruitment-mob').style.display = 'none';
                         document.getElementById('demographic-table-radial-mob').style.display = 'none';
                         document.getElementById('ActionBtnMob').style.display = "block";
@@ -2677,11 +2670,18 @@ function calculateAccumulatedDemographics() {
 function updateAccumulatedDemographics() {
     const accumulatedData = calculateAccumulatedDemographics();
     const table = document.getElementById('demographicTableMob');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
+
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
         switch(label) {
             case 'Population':
@@ -3466,6 +3466,7 @@ function ActionBtnRecruitmentMob() {
 }
 function CloseBtnRecruitmentMob() {
     document.getElementById("CloseBtnRecruitmentMob").addEventListener("click", function(){
+        selectedGroupForDeletionRecruitment = null;
         document.getElementById("demographic-table-recruitment-mob").style.display = "none";
     })
 }
@@ -3477,11 +3478,17 @@ function GoBackToTableRecruitment() {
 }
 function displayGroupDemographicsRecruitment(demographics) {
     const table = document.getElementById('demographicTableRecruitmentMob');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
         switch(label) {
             case 'Population':
@@ -3630,6 +3637,7 @@ function populateTableRecruitment() {
     savedRegions.forEach(region => {
         if (!groupedRegions[region.groupId]) {
             groupedRegions[region.groupId] = {
+                id: region.groupId,
                 name: region.displayName,
                 color: region.color,
                 classifications: new Set()
@@ -3642,9 +3650,9 @@ function populateTableRecruitment() {
         const classifications = Array.from(group.classifications).join(", ");
         row.innerHTML = `
             <td>${group.name}</td>
-            <td></td>
+            <td>${group.id}</td>
             <td style="background-color: ${group.color}; color: #fff;">
-                ${classifications}
+                Under Constructon
             </td>
         `;
         tableBody.appendChild(row);
@@ -3907,11 +3915,17 @@ function calculateAccumulatedDemographicsRecruitment() {
 function updateAccumulatedDemographicsRecruitment() {
     const accumulatedData = calculateAccumulatedDemographicsRecruitment();
     const table = document.getElementById('demographicTableRecruitmentMob');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = tbody.getElementsByTagName('tr');
+    const tbodies = table.getElementsByTagName('tbody');
+    const rows = [];
+
+    for (let tbody of tbodies) {
+        for (let row of tbody.getElementsByTagName('tr')) {
+            rows.push(row);
+        }
+    }
     const formatNumber = (num) => num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "0";
     for (let row of rows) {
-        const label = row.cells[0].textContent;
+        const label = row.cells[0].textContent.trim();
         const valueCell = row.cells[1];
 
         switch(label) {
@@ -4184,6 +4198,8 @@ function ActionBtnRadialMob() {
 }
 function CloseBtnRadialMob() {
     document.getElementById("CloseBtnRadialMob").addEventListener("click", function(){
+        selectedCircleId = null;
+        resetCircleHighlight(selectedCircleId);
         document.getElementById("demographic-table-radial-mob").style.display = "none";
     })
 }
@@ -4759,38 +4775,95 @@ function renderPieChartRadial() {
     layerInfoView.appendChild(legendDiv);
 }
 function deleteCircleFromTable(circleId) {
-    const circleData = circles.get(circleId);
-    if (circleData) {
-        circleData.circle.setMap(null);
-        if (circleData.label) {
-            circleData.label.setMap(null);
+    $.ajax({
+        url: `/delete_circle/${circleId}`,
+        method: "DELETE",
+        success: function(response) {
+            if (response.status === 'success') {
+                // Remove the circle from map
+                const circleData = circles.get(circleId);
+                if (circleData) {
+                    if (circleData.circle) {
+                        circleData.circle.setMap(null);  
+                    }
+                    if (circleData.label) {
+                        circleData.label.setMap(null);  
+                    }
+                }
+
+                // Remove from circles Map
+                circles.delete(circleId);
+
+                // Remove row from table
+                const tableBody = document.querySelector("#dataTableradialMob tbody");
+                const rows = tableBody.querySelectorAll("tr");
+                rows.forEach(row => {
+                    const idCell = row.querySelector("td:nth-child(2)");
+                    if (idCell && idCell.textContent === String(circleId)) {
+                        tableBody.removeChild(row);
+                    }
+                });
+
+                // Hide modal and related UI
+                $('#delet-area').modal('hide');
+                document.getElementById("demographic-table-radial-mob").style.display = "none";
+                document.getElementById("RadialViewRightMob").style.display = "none";
+            } else {
+                console.error("Error deleting circle:", response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX error while deleting circle:", status, error);
+        },
+        complete: function() {
+            console.log("Circle deletion process completed.");
         }
-        circles.delete(circleId);
-        saveCirclesToLocalStorage();
-        populateTableRadial();
-    }
+    });
 }
+
 function populateTableRadial(data) {
     const tableBody = document.querySelector("#dataTableradialMob tbody");
     const filterRow = tableBody.querySelector("tr:first-child");
     tableBody.innerHTML = "";
-    tableBody.appendChild(filterRow);
+    if (filterRow) {
+        tableBody.appendChild(filterRow);
+    }
+
     const savedCircles = Array.from(circles.values());
+    console.log(savedCircles);
+
     savedCircles.forEach(circleData => {
         const row = document.createElement("tr");
-        const uniqueKey = `${circleData.circle.getCenter().lat().toFixed(4)}-${circleData.circle.getCenter().lng().toFixed(4)}-${circleData.circle.getRadius().toFixed(2)}`;
-        row.innerHTML = `
-            <td>${circleData.data.name}</td>
-            <td>${uniqueKey}</td>
-            <td style="background-color: ${circleData.data.color}; color: white;">
-                Circle
-            </td>
-            <td>
-                <button class="btn btn-sm btn-danger" onclick="deleteCircleFromTable('${circleData.circle.id}')">
-                    Delete
-                </button>
-            </td>
-        `;
+
+        // Name cell
+        const nameCell = document.createElement("td");
+        nameCell.textContent = circleData.data.name;
+        row.appendChild(nameCell);
+
+        // ID cell
+        const idCell = document.createElement("td");
+        idCell.textContent = circleData.circle.id;
+        row.appendChild(idCell);
+
+        // Classification cell
+        const classificationCell = document.createElement("td");
+        classificationCell.textContent = circleData.data.classificationText || '';
+        classificationCell.style.backgroundColor = circleData.data.color;
+        classificationCell.style.color = "white";
+        row.appendChild(classificationCell);
+
+        // Delete button cell
+        const deleteCell = document.createElement("td");
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-sm btn-danger";
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener("click", () => {
+            deleteCircleFromTable(circleData.circle.id);
+        });
+        deleteCell.appendChild(deleteButton);
+        row.appendChild(deleteCell);
+
+        // Append the row to the table body
         tableBody.appendChild(row);
     });
 }
@@ -5165,11 +5238,13 @@ async function handleRadiusChange(newRadius) {
                 renderPieChartRadial(); 
             }
         }
+        // selectedColorRadial = null;
     } catch (error) {
         console.error('Error updating circle:', error);
     } finally {
         saveButton.disabled = false;
         saveButton.textContent = 'Save';
+        selectedColorRadial = null;
     }
 }
 function clearMapCircles() {
@@ -5271,7 +5346,7 @@ function updateLabelsRadial() {
                             text: labelText,
                             color: 'black',
                             fontWeight: "700",
-                            fontSize: "14px",
+                            fontSize: "14px",                               
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
                             className: 'map-label'
                         },
