@@ -908,6 +908,18 @@ function addControlListeners() {
                 }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
+        document.getElementById('FranchiseNotes').addEventListener('click', function () {
+        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+        notesModal.show();
+        });
+        document.getElementById('radialNotes').addEventListener('click', function () {
+        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+        notesModal.show();
+        });
+        document.getElementById('RecruitmentNotes').addEventListener('click', function () {
+        const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+        notesModal.show();
+        });
         //////////////////////////////////////////////////////////////////////////////////////////////////
         if (DeleteLayerButtonRadial) {
             DeleteLayerButtonRadial.addEventListener("click", function(){
@@ -2211,6 +2223,9 @@ function handleAreaDevClick(e) {
                         document.getElementById('demographic-table').style.display = 'none';
                     } else {
                         selectedGroupForDeletion = groupIdarea;
+                        document.getElementById('saveNotesBtn').addEventListener('click', function () {
+                        saveNotes(groupIdarea);
+                        });
                         displayGroupDemographics(grouparea.demographics);
                         document.getElementById('demographic-table').style.display = 'block';
                         document.getElementById('submit-btn').style.display = 'none';
@@ -2298,6 +2313,9 @@ function handleRecruitmentClick(e) {
                         document.getElementById('demographic-table-recruitment').style.display = 'none';
                     } else {
                         selectedGroupForDeletionRecruitment = groupIdRecruit;
+                         document.getElementById('saveNotesBtn').addEventListener('click', function () {
+                        saveNotesRecruit(groupIdRecruit);
+                        });
                         displayGroupDemographicsRecruitment(groupRec.demographicsRec);
                         document.getElementById('demographic-table-recruitment').style.display = 'block';
                         document.getElementById('demographic-table').style.display = 'none';
@@ -3646,6 +3664,62 @@ function renderPieChartRecruitment() {
         }
     });
 }
+function saveNotes(groupID) {
+    const notes = document.getElementById('notesTextarea').value;
+    const groupId = groupID;
+    fetch('/save_notes', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+        groupId: groupId,
+        note: notes
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+        console.log('Notes saved successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('notesModal')).hide();
+        } else {
+        console.log('Error: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        console.log('Something went wrong!');
+    });
+}
+
+function saveNotesRecruit(groupID) {
+    const notes = document.getElementById('notesTextarea').value;
+    const groupId = groupID;
+    fetch('/save_notes_recruitment', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+        groupId: groupId,
+        note: notes
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+        console.log('Notes saved successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('notesModal')).hide();
+        } else {
+        console.log('Error: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        console.log('Something went wrong!');
+    });
+}
+
 function populateTableRecruitment() {
     const tableBody = document.querySelector("#dataTableRecruitment tbody");
     tableBody.innerHTML = "";
