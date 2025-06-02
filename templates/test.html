@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>City Postal Code Finder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     #suggestions {
@@ -42,11 +41,8 @@
   <div class="container text-center">
     <h2>Find Postal Codes in a City</h2>
     <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#searchModal">Search Address</button>
-    
     <div id="results" class="mt-4"></div>
   </div>
-
-  <!-- Modal -->
   <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content p-3">
@@ -55,7 +51,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body position-relative">
-          <input type="text" id="autocompleteInput" class="form-control" placeholder="Start typing city..." autocomplete="off" />
+          <input type="text" id="autocompleteinputPostalCodes" class="form-control" placeholder="Start typing city..." autocomplete="off" />
           <div id="suggestions"></div>
           <div class="loading mt-3">
             <div class="spinner-border text-primary" role="status">
@@ -70,57 +66,46 @@
       </div>
     </div>
   </div>
-
-  <!-- Google Maps JS API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc&libraries=places"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc&libraries=places,geometry"></script>
   <script>
-    let selectedCity = null;
-
-    const input = document.getElementById("autocompleteInput");
+    let selectedCityPostalCodes = null;
+    const inputPostalCodes = document.getElementById("autocompleteinputPostalCodes");
     const suggestionsBox = document.getElementById("suggestions");
     const loadingDiv = document.querySelector(".loading");
     const resultsDiv = document.getElementById("results");
     const service = new google.maps.places.AutocompleteService();
     const placesService = new google.maps.places.PlacesService(document.createElement('div'));
+    const geocoder = new google.maps.Geocoder();
 
-    input.addEventListener("keyup", async (e) => {
-      const value = input.value;
+    inputPostalCodes.addEventListener("keyup", async (e) => {
+      const value = inputPostalCodes.value;
       suggestionsBox.innerHTML = "";
-      selectedCity = null;
-
+      selectedCityPostalCodes = null;
       if (value.length < 3) return;
-
       service.getPlacePredictions({ input: value, types: ['(cities)'] }, (predictions, status) => {
         if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) return;
-
         predictions.forEach(prediction => {
           const div = document.createElement("div");
           div.textContent = prediction.description;
           div.onclick = () => {
-            input.value = prediction.description;
-            selectedCity = prediction;
+            inputPostalCodes.value = prediction.description;
+            selectedCityPostalCodes = prediction;
             suggestionsBox.innerHTML = "";
           };
           suggestionsBox.appendChild(div);
         });
       });
     });
-
     document.getElementById("submitCityBtn").addEventListener("click", async () => {
-      if (!selectedCity) {
+      if (!selectedCityPostalCodes) {
         alert("Please select a city from the suggestions.");
         return;
-      }
-      
+      }      
       loadingDiv.style.display = "block";
-      console.log("Selected City:---------->", selectedCity);
-      
+      console.log("Selected City:---------->", selectedCityPostalCodes);
       try {
-        const postalCodes = await getPostalCodesForCity(selectedCity.description);
+        const postalCodes = await getPostalCodesForCity(selectedCityPostalCodes);
         console.log("Postal Codes fetched--->", postalCodes);
-        
-        displayResults(selectedCity.description, postalCodes);
-        
         const modal = bootstrap.Modal.getInstance(document.getElementById('searchModal'));
         modal.hide();
       } catch (error) {
@@ -130,59 +115,100 @@
         loadingDiv.style.display = "none";
       }
     });
-
-    async function getPostalCodesForCity(cityName) {
+    async function getPostalCodesForCity(cityData) {
       const postalCodes = new Set();
-      
-      // Method 1: Search for postal codes directly
-      const directSearch = await searchPostalCodes(cityName);
-      directSearch.forEach(code => postalCodes.add(code));
-      
+      const cityDetails = await getCityDetails(cityData.place_id);
+      if (!cityDetails) {
+        console.log("Could not get city details");
+        return [];
+      }
+      const cityName = extractCityInfo(cityData.description);
+      console.log("Parsed city info:", cityName);
+      const facilityResults = await searchWithinCityBounds(cityDetails, cityName);
+      facilityResults.forEach(code => {
+        if (isValidForCity(code, cityName)) {
+          postalCodes.add(code);
+        }
+      });
+      if (cityDetails.geometry && cityDetails.geometry.bounds) {
+        const geoResults = await samplePostalCodesInBounds(cityDetails.geometry.bounds, cityName);
+        geoResults.forEach(code => {
+          if (isValidForCity(code, cityName)) {
+            postalCodes.add(code);
+          }
+        });
+      }
       return Array.from(postalCodes).sort();
     }
-
-    async function searchPostalCodes(cityName) {
+    function extractCityInfo(description) {
+      const parts = description.split(',').map(p => p.trim());
+      return {
+        city: parts[0],
+        state: parts[1] || '',
+        country: parts[parts.length - 1] || '',
+        fullDescription: description
+      };
+    }
+    function isValidForCity(postalCode, cityInfo) {
+      if (!/^\d{5}$/.test(postalCode)) return false;
+      if (postalCode === '00000') return false;
+      if (cityInfo.country.toLowerCase().includes('usa') || cityInfo.country.toLowerCase().includes('united states')) {
+        if (cityInfo.state.toLowerCase().includes('ca') || cityInfo.state.toLowerCase().includes('california')) {
+          return postalCode.startsWith('9');
+        }
+      }      
+      return true;
+    }
+    async function getCityDetails(placeId) {
+      return new Promise((resolve) => {
+        const request = {
+          placeId: placeId,
+          fields: ['geometry', 'address_components', 'formatted_address']
+        };
+        placesService.getDetails(request, (place, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            resolve(place);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+    async function searchWithinCityBounds(cityDetails, cityInfo) {
       const postalCodes = new Set();
-      
-      // Extract city and state from the description
-      const parts = cityName.split(',');
-      const city = parts[0].trim();
-      const state = parts[1] ? parts[1].trim() : '';
-      
-      // Search for postal codes using different query patterns
       const searchQueries = [
-        `${city} ${state} zip code`,
-        `${city} ${state} postal code`,
-        `zip codes in ${city} ${state}`,
-        `${city} ${state} mail code`
+        `post office ${cityInfo.city} ${cityInfo.state}`,
+        `USPS ${cityInfo.city} ${cityInfo.state}`,
+        `mail center ${cityInfo.city} ${cityInfo.state}`
       ];
-      
       for (const query of searchQueries) {
         try {
-          const codes = await performTextSearch(query);
-          codes.forEach(code => postalCodes.add(code));
-          await delay(200); // Rate limiting
+          const results = await performBoundedTextSearch(query, cityDetails.geometry.bounds);
+          results.forEach(code => postalCodes.add(code));
+          await delay(500); 
         } catch (error) {
           console.error("Search error:", error);
         }
       }
-      
+
       return Array.from(postalCodes);
     }
-
-    async function performTextSearch(query) {
+    async function performBoundedTextSearch(query, bounds) {
       return new Promise((resolve) => {
         const request = {
           query: query,
-          type: 'establishment'
+          bounds: bounds, 
+          fields: ['formatted_address', 'address_components', 'geometry']
         };
-        
         placesService.textSearch(request, (results, status) => {
           const codes = new Set();
-          
           if (status === google.maps.places.PlacesServiceStatus.OK && results) {
             results.forEach(result => {
-              // Extract postal codes from address components
+              if (bounds && result.geometry && result.geometry.location) {
+                if (!bounds.contains(result.geometry.location)) {
+                  return; 
+                }
+              }
               if (result.address_components) {
                 result.address_components.forEach(component => {
                   if (component.types.includes('postal_code')) {
@@ -190,13 +216,60 @@
                   }
                 });
               }
-              
-              // Extract from formatted address using regex
               if (result.formatted_address) {
                 const zipMatches = result.formatted_address.match(/\b\d{5}(-\d{4})?\b/g);
                 if (zipMatches) {
-                  zipMatches.forEach(zip => codes.add(zip.split('-')[0]));
+                  zipMatches.forEach(zip => {
+                    const baseZip = zip.split('-')[0];
+                    if (baseZip.length === 5) {
+                      codes.add(baseZip);
+                    }
+                  });
                 }
+              }
+            });
+          }
+          resolve(Array.from(codes));
+        });
+      });
+    }
+    async function samplePostalCodesInBounds(bounds, cityInfo) {
+      const postalCodes = new Set();
+      const center = bounds.getCenter();
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      const samplePoints = [
+        center, // City center
+        { lat: center.lat(), lng: ne.lng() }, // East
+        { lat: center.lat(), lng: sw.lng() }, // West
+        { lat: ne.lat(), lng: center.lng() }, // North
+        { lat: sw.lat(), lng: center.lng() }  // South
+      ];
+      for (const point of samplePoints) {
+        try {
+          const codes = await reverseGeocodePoint(point);
+          codes.forEach(code => postalCodes.add(code));
+          await delay(300);
+        } catch (error) {
+          console.error("Reverse geocode error:", error);
+        }
+      }
+      return Array.from(postalCodes);
+    }
+    async function reverseGeocodePoint(location) {
+      return new Promise((resolve) => {
+        geocoder.geocode({ location: location }, (results, status) => {
+          const codes = new Set();
+          
+          if (status === 'OK' && results) {
+            // Only look at the first few most relevant results
+            results.slice(0, 3).forEach(result => {
+              if (result.address_components) {
+                result.address_components.forEach(component => {
+                  if (component.types.includes('postal_code')) {
+                    codes.add(component.long_name);
+                  }
+                });
               }
             });
           }
@@ -205,58 +278,15 @@
         });
       });
     }
-
-    async function searchByPattern(cityName) {
-      const postalCodes = new Set();
-      // For other cities, try to validate potential codes through geocoding
-      return await validatePostalCodes(cityName);
-    }
-
-    async function validatePostalCodes(cityName) {
-      const postalCodes = new Set();
-
-      
-      return Array.from(postalCodes);
-    }
-
-    function displayResults(cityName, postalCodes) {
-      if (postalCodes.length === 0) {
-        resultsDiv.innerHTML = `
-          <div class="alert alert-warning">
-            No postal codes found for ${cityName}. This might be due to API limitations.
-          </div>
-        `;
-        return;
-      }
-      
-      resultsDiv.innerHTML = `
-        <div class="card">
-          <div class="card-header">
-            <h5>Postal Codes for ${cityName}</h5>
-          </div>
-          <div class="card-body">
-            <p><strong>Found ${postalCodes.length} postal code(s):</strong></p>
-            <div>
-              ${postalCodes.map(code => `<span class="postal-code-item">${code}</span>`).join('')}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
     function delay(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
-
-    // Hide suggestions when clicking outside
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('#autocompleteInput') && !e.target.closest('#suggestions')) {
+      if (!e.target.closest('#autocompleteinputPostalCodes') && !e.target.closest('#suggestions')) {
         suggestionsBox.innerHTML = "";
       }
     });
   </script>
-
-  <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

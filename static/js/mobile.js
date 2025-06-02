@@ -1227,6 +1227,26 @@ function addControlListeners() {
                 }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
+        document.getElementById("show-more-btn-mob").addEventListener("click", function () {
+            const extraRows = document.getElementById("extra-rows-mob");
+            if (extraRows.style.display === "none") {
+                extraRows.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRows.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
+        });
+        document.getElementById("show-more-btn-recruitment-mob").addEventListener("click", function () {
+            const extraRowsRec = document.getElementById("moreDemographicsRecMob");
+            if (extraRowsRec.style.display === "none") {
+                extraRowsRec.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRowsRec.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
+        });
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     initializeColorOptions();

@@ -683,6 +683,14 @@ function addControlListeners() {
             $('#delet-area').modal('show');
             handleDeleteRecruitment();
         });
+        document.getElementById("DeleteLayerButton").addEventListener("click", function(){
+            $('#delet-area').modal('show');
+            handleDelete();
+        });
+        document.getElementById("DeleteLayerButtonRadial").addEventListener("click", function(){
+            $('#delet-area').modal('show');
+            handleDeleteRadial();
+        });
         colorOptions.forEach(option => {
         option.addEventListener('click', function () {
             colorOptions.forEach(opt => opt.classList.remove('active'));
@@ -919,6 +927,26 @@ function addControlListeners() {
         document.getElementById('RecruitmentNotes').addEventListener('click', function () {
         const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
         notesModal.show();
+        });
+        document.getElementById("show-more-btn").addEventListener("click", function () {
+            const extraRows = document.getElementById("extra-rows");
+            if (extraRows.style.display === "none") {
+                extraRows.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRows.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
+        });
+        document.getElementById("show-more-btn-recruitment").addEventListener("click", function () {
+            const extraRowsRec = document.getElementById("moreDemographics");
+            if (extraRowsRec.style.display === "none") {
+                extraRowsRec.style.display = "";
+                this.innerHTML = "⬆ Show Less";
+            } else {
+                extraRowsRec.style.display = "none";
+                this.innerHTML = "⬇ Show More";
+            }
         });
         //////////////////////////////////////////////////////////////////////////////////////////////////
         if (DeleteLayerButtonRadial) {
