@@ -894,25 +894,44 @@ def make_api_request(url, params, max_retries=3, backoff_factor=0.5):
             wait_time = backoff_factor * (2 ** (retry_count - 1))
             print(f"Retry {retry_count}/{max_retries} for {url} after {wait_time:.2f}s: {str(e)}")
             time.sleep(wait_time)
+    
+def fetch_population_data(center, radius_meters, api_key=None):
+    """Fetch population data using the new RapidAPI service."""
+    try:
+        # Convert "lat,lng" to lat and lng values
+        lng, lat = map(float, center.split(','))
 
-def fetch_population_data(center, radius, api_key):
-    """Fetch population data from API"""
-    url = "https://osm.buntinglabs.com/v1/census/population"
-    params = {
-        'center': center,
-        'radius': radius,
-        'api_key': api_key
-    }
-    
-    print(f"Making population API request to {url} with params: {params}")
-    data, error = make_api_request(url, params)
-    
-    if error:
-        print(f"Population API error: {error}")
-        return None, error
-    
-    population = data.get("population", 0)
-    return population, None
+        # Convert radius from string to float, then meters to kilometers
+        radius_km = float(radius_meters) / 1000
+
+        url = "https://population-inside-radius.p.rapidapi.com/"
+        querystring = {
+            "lat": lat,
+            "lng": lng,
+            "radius": radius_km,
+            "year": "2025"
+        }
+
+        headers = {
+            "x-rapidapi-host": "population-inside-radius.p.rapidapi.com",
+            "x-rapidapi-key": "dad2253717mshb69341f1b3f8ccbp11d756jsn0f652ee9304e"  # replace or fetch from env/config
+        }
+
+        print(f"Making population API request to {url} with params: {querystring}")
+        response = requests.get(url, headers=headers, params=querystring)
+
+        if response.status_code != 200:
+            print(f"Population API error: {response.status_code} - {response.text}")
+            return None, response.text
+
+        data = response.json()
+        population = data.get("population", 0)
+        return population, None
+
+    except Exception as e:
+        print(f"Exception during population fetch: {e}")
+        return None, str(e)
+
 
 def fetch_income_data(center, radius, api_key):
     """Fetch income data from API"""
@@ -945,7 +964,7 @@ def fetch_population():
         api_key = "7P6Fr7dpk2i"
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        population, pop_error = fetch_population_data(api_center, radius, api_key)
+        population, pop_error = fetch_population_data(api_center, radius)
         median_income, income_error = fetch_income_data(api_center, radius, api_key)
         if pop_error and income_error:
             return jsonify({
