@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script  src="https://code.jquery.com/jquery-3.7.1.js"  crossorigin="anonymous"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc&v=3.59&loading=async&map_ids=ade4782d096b4576&libraries=places" async defer></script>
+    <!-- &libraries=places -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -604,6 +605,7 @@
             </div>
             <!-- DEMOGRAPHIC TABLE FOR RADIAL ANALYSIS MOBILE -->
             <div id="demographic-table-radial-mob" class="table-responsive mb-3" style="display: none;">
+                 <h5 id="franchise-display-mob" class="mb-2" style="display: none;"></h5>
                 <table id="demographicTableRadialMob" class="table table-striped table-bordered">
                     <thead class="table-dark">
                         <tr>
@@ -1423,6 +1425,7 @@
                     
                     <!-- DEMOGRAPHIC TABLE FOR RADIAL ANALYSIS DESKTOP -->
                     <div id="demographic-table-radial" class="table-responsive mb-3" style="display: none;">
+                        <h5 id="franchise-display" class="mb-2" style="display: none;"></h5>
                         <table id="demographicTableRadial" class="table table-striped table-bordered">
                             <thead>
                                 <tr>
@@ -1585,6 +1588,11 @@
                                 <label>Franchisee Name</label>
                                 <input type="text" id="area-name-radial" class="form-control mb-2" placeholder="Enter Franchisee Name">
                             </div>
+                            <div class="col-12">
+                                <label>Address</label>
+                                <input type="text" id="address-radial" class="form-control mb-2" placeholder="Enter Address">
+                            </div>
+
                             <div class="col-12">
                                 <label>City</label>
                                 <input type="text" id="city-radial" class="form-control mb-2" placeholder="Enter City">

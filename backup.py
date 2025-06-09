@@ -616,7 +616,6 @@ def save_circles():
                     circle.get('franchiseeNumber', ''),
                     circle.get('city', ''),
                     circle.get('state', ''),
-                    circle.get('address', ''),
                     circle.get('autocomplete_value', '')
                 ))
 

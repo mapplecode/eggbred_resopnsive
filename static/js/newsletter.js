@@ -10,18 +10,29 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.style.background = 'rgba(220, 53, 69, 0.8)';
     }
 });
-// Load newsletters from backend
+function initializeDefaultYears() {
+    const currentYear = new Date().getFullYear();
+    for (let i = 0; i < 4; i++) {
+        const year = (currentYear + i).toString();
+        if (!newsletters[year]) {
+            newsletters[year] = [];
+        }
+    }
+}
+
 async function loadNewsletters() {
     try {
         const response = await fetch('/api/newsletters');
         newsletters = await response.json();
+        initializeDefaultYears(); // <-- Ensure default years exist
         renderNewsletters();
     } catch (error) {
         console.error('Error loading newsletters:', error);
-        // initializeSampleData();
+        initializeDefaultYears(); // <-- Even in fallback
         renderNewsletters();
     }
 }
+
 // Initialize with sample data
 function initializeSampleData() {
     newsletters = {
@@ -36,7 +47,7 @@ function initializeSampleData() {
 function renderNewsletters() {
     const grid = document.getElementById('newsletterGrid');
     grid.innerHTML = '';
-    const years = Object.keys(newsletters).sort((a, b) => b - a);
+    const years = Object.keys(newsletters).sort((a, b) => a - b); // ✅ ascending order
     years.forEach(year => {
         const yearColumn = createYearColumn(year, newsletters[year]);
         grid.appendChild(yearColumn);
@@ -108,11 +119,7 @@ function createNewsletterItem(newsletter, year) {
     }
     return item;
 }
-// Toggle year visibility
-// function toggleYear(year) {
-//     const list = document.getElementById(`year-${year}`);
-//     list.classList.toggle('active');
-// }
+
 // Toggle admin mode
 function toggleAdminMode() {
     isAdminMode = !isAdminMode;
@@ -139,18 +146,24 @@ function editNewsletter(newsletter, year) {
     document.getElementById('newsletterUrl').value = newsletter.url;
     document.getElementById('newsletterModal').style.display = 'block';
 }
+
 // Close modal
 function closeModal() {
     document.getElementById('newsletterModal').style.display = 'none';
 }
+
 // Add new year
 function addNewYear() {
+    const currentMaxYear = Math.max(...Object.keys(newsletters).map(Number));
+    document.getElementById('newYear').value = currentMaxYear + 1;
     document.getElementById('yearModal').style.display = 'block';
 }
+
 // Close year modal
 function closeYearModal() {
     document.getElementById('yearModal').style.display = 'none';
 }
+
 // Handle newsletter form submission
 document.getElementById('newsletterForm').addEventListener('submit', async function(e) {
     e.preventDefault();            
@@ -212,7 +225,11 @@ document.getElementById('newsletterForm').addEventListener('submit', async funct
 // Handle year form submission
 document.getElementById('yearForm').addEventListener('submit', async function(e) {
     e.preventDefault();            
-    const year = document.getElementById('newYear').value;            
+    const year = document.getElementById('newYear').value;
+        if (newsletters[year]) {
+            alert('Year already exists!');
+            return;
+        }       
     try {
         const response = await fetch('/api/years', {
             method: 'POST',

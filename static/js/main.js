@@ -65,6 +65,7 @@ let currentCenterRadial, currentZoomRadial;
 let selectedRegionsDemographicsRadial = new Map();
 let areColorsVisibleRadial = true;
 let selectedClassificationTextRadial = '';
+let autocompleteInput = '';
 let prefixRadial = "";
 let isEditingAreaRadial = false;
 let editingGroupIdRadial = null;
@@ -226,7 +227,7 @@ async function loadSavedCircles() {
                 circle.addListener("click", () => {
                     activeCircle = circle;
                     activeCircleId = id;
-                    showInputPanel();
+                    // showInputPanel();
                     document.getElementById("submit-btn-radial").style.display = "none";
                     populateTableForCircle(id);
                 });
@@ -1057,7 +1058,7 @@ function addControlListeners() {
             SubmitButtonAutoComplete.addEventListener("click", function() {
                 resetDemographicsTable();
                 createCircleAtSelectedLocation();
-                document.getElementById("submit-btn-radial").style.display = "block";
+                submit_btnRadial.style.display = "block";
                 // setupMapClickListener();
             })
         }
@@ -1065,8 +1066,21 @@ function addControlListeners() {
             input_back_btn.addEventListener('click', function() {
                 AddressInput.style.display = "none";
                 radialview.style.display = "block";
+                activeCircle.setMap(null);
+                const demographicTableRadial = document.getElementById("demographic-table-radial");
+                if (selectedCircleId && circles[selectedCircleId] && circles[selectedCircleId].cid) {
+                    return;
+                }
+                if (!lastInteractedFeatureIds || lastInteractedFeatureIds.length === 0) {
+                    demographicTableRadial.style.display = "none";
+                    accumulatedData = null;
+                    if (selectedCircleId) {
+                        resetCircleHighlight(selectedCircleId);
+                        selectedCircleId = null;
+                    }
+                }
             })
-        }
+            }
         if (dragBtn) {
             dragBtn.addEventListener('dragstart', function(e) {
                 e.target.style.opacity = '0.4';
@@ -2500,20 +2514,30 @@ function updateStateInputRec(stateName) {
     }
     stateInput.value = states.join(', ');
 }
-function updateStateInputRadial(stateName,cityName) {
+function updateStateInputRadial(stateName, cityName) {
     const stateInput = document.getElementById('state-radial');
     const cityInput = document.getElementById('city-radial');
+    const addressRadial = document.getElementById('address-radial');
+    const inputAddress = document.getElementById('autocomplete');
+
     let states = stateInput.value.split(',').map(state => state.trim()).filter(state => state);
-    let cities =  cityInput.value.split(',').map(city => city.trim()).filter(city => city);
+    let cities = cityInput.value.split(',').map(city => city.trim()).filter(city => city);
+
     if (!states.includes(stateName)) {
         states.push(stateName);
     }
     stateInput.value = states.join(', ');
+
     if (!cities.includes(cityName)) {
         cities.push(cityName);
     }
     cityInput.value = cities.join(', ');
+    const addressValue = inputAddress.value.trim();
+    if (addressValue) {
+        addressRadial.value = addressValue;
+    }
 }
+
 function add_state(postalCode){
     $.ajax({
         url: "/get_state",
@@ -2833,12 +2857,7 @@ function initializeEventListeners() {
                 });
             }
         });
-        document.getElementById("editAreaBoundry")?.addEventListener("click", handleEditArea);
-        // document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        //     prefix = document.getElementById('prefixInput').value.trim();
-        //     $('#editLabelModal').modal('hide');
-        //     updateLabels();
-        // });
+
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
             let rgbValues;
@@ -2875,12 +2894,6 @@ function initializeEventListeners() {
                 });
             }
         });
-        document.getElementById("editAreaBoundryRecruitment")?.addEventListener("click", handleEditAreaRecruitment);
-        // document.getElementById('saveLabelChanges').addEventListener('click', function() {
-        //     prefixRecruitment = document.getElementById('prefixInput').value.trim();
-        //     $('#editLabelModal').modal('hide');
-        //     updateLabels();
-        // });
         document.querySelectorAll('.color-option').forEach(option => {
             const color = option.getAttribute('data-color');
             let rgbValues;
@@ -2925,10 +2938,12 @@ function handleEditArea() {
     const NumberOfDev = document.getElementById("num-developments");
     const zipCodeInput = document.getElementById("zip-codes");
     const stateInput = document.getElementById("state");
+
     zipCodeInput.value = "";
     stateInput.value = "";
     franchisee.value = "";
     NumberOfDev.value = "";
+
     loader.style.display = "block";
     franchiseViewRight.style.display = "none";
     demographicTable.style.display = 'none';
@@ -2938,6 +2953,7 @@ function handleEditArea() {
         alert("Please select an area to edit first");
         return;
     }
+
     isEditingArea = true;
     isEditingAreaRecruit = false;
     editingGroupId = selectedGroupForDeletion;
@@ -2950,38 +2966,46 @@ function handleEditArea() {
         loader.style.display = "none";
         return;
     }
+
     selectedColor = groupToEdit.color || 'grey';
     document.querySelectorAll('.color-option').forEach(option => {
         option.classList.toggle('selected', option.dataset.color === selectedColor);
-    });    
+    });
+
     featureLayer.style = applyStyle;
+
     const uniqueStates = new Set();
+    const processedZipCodes = new Set();
 
     const fetchPromises = groupToEdit.regions.map(placeId => {
         const region = selectedRegions.get(placeId);
         if (!region) return Promise.resolve();
+
+        const zip = region.postalCode;
         const clonedRegion = JSON.parse(JSON.stringify(region));
         newSelectedRegions.push(clonedRegion);
-        updateZipCodeInput(region.postalCode, 'add');
-        
+        updateZipCodeInput(zip, 'add');
+
+        if (processedZipCodes.has(zip)) {
+            return Promise.resolve();
+        }
+        processedZipCodes.add(zip);
+
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: "/get_state",
                 method: "GET",
-                data: {
-                    "zip_code": region.postalCode
-                },
+                data: { "zip_code": zip },
                 success: function(stateResponse) {
                     if (stateResponse.success) {
                         uniqueStates.add(stateResponse.data);
                         stateInput.value = Array.from(uniqueStates).join(', ');
                     }
+
                     $.ajax({
                         url: "/get_data",
                         method: "GET",
-                        data: {
-                            "zip_code": region.postalCode
-                        },
+                        data: { "zip_code": zip },
                         success: function(response) {
                             if (response.success) {
                                 selectedRegionsDemographics.set(placeId, response.data);
@@ -2989,18 +3013,19 @@ function handleEditArea() {
                             resolve();
                         },
                         error: function(xhr, status, error) {
-                            console.error(`Error fetching data for postal code ${region.postalCode}:`, error);
+                            console.error(`Error fetching data for postal code ${zip}:`, error);
                             resolve();
                         }
                     });
                 },
                 error: function(xhr, status, error) {
-                    console.error(`Error fetching state for postal code ${region.postalCode}:`, error);
+                    console.error(`Error fetching state for postal code ${zip}:`, error);
                     resolve();
                 }
             });
         });
     });
+
     Promise.all(fetchPromises)
         .then(() => {
             originalRegions = [...newSelectedRegions];
@@ -3009,10 +3034,10 @@ function handleEditArea() {
             inputArea.style.display = "block";
             areaName.value = groupToEdit.name;
             franchisee.value = groupToEdit.franchisee;
-            NumberOfDev.value = groupToEdit.numDevelopments
+            NumberOfDev.value = groupToEdit.numDevelopments;
             featureLayer.style = applyStyle;
             updateLabels();
-            map.data.setStyle({visible: true});
+            map.data.setStyle({ visible: true });
         })
         .catch(error => {
             console.error("Error processing regions:", error);
@@ -3024,6 +3049,7 @@ function handleEditArea() {
             loader.style.display = "none";
         });
 }
+
 const styleDefaultNormalmap = {
     strokeColor: "#FFFFFF",
     strokeOpacity: 0,
@@ -4138,112 +4164,126 @@ function handleEditAreaRecruitment() {
     const loader = document.getElementById("loader-wrapper");
     const RecruitmentViewRight = document.getElementById("RecruitmentViewRight");
     const demographicTableRec = document.getElementById('demographic-table-recruitment');
-    const inputAreaRec = document.getElementById("input-area-recruitment")
+    const inputAreaRec = document.getElementById("input-area-recruitment");
     const nameRec = document.getElementById("area-name-recruitment");
     const recruitmentArea = document.getElementById("recruitmentArea");
     const PotStoreCount = document.getElementById("PotStoreCount");
     const zipCodesRecruitment = document.getElementById("zipCodesRecruitment");
     const stateRecruitment = document.getElementById("stateRecruitment");
+
     zipCodesRecruitment.value = "";
     stateRecruitment.value = "";
     recruitmentArea.value = "";
     PotStoreCount.value = "";
+
     loader.style.display = "block";
     RecruitmentViewRight.style.display = "none";
     demographicTableRec.style.display = 'none';
+
     if (selectedGroupForDeletionRecruitment === null) {
         loader.style.display = "none";
         alert("Please select an area to edit first");
         return;
     }
+
     isEditingAreaRecruit = true;
     isEditingArea = false;
     editingGroupIdRecruit = selectedGroupForDeletionRecruitment;
+
     const groupToEdit = selectedRegionGroupsRecruitment.get(editingGroupIdRecruit);
     console.log("Group to Edit:", groupToEdit);
     newSelectedRegionsRecruitment = [];
     selectedRegionsRecruitmentDemographics.clear();
+
     if (!groupToEdit || !groupToEdit.regions) {
         loader.style.display = "none";
         return;
     }
+
     if (groupToEdit.category) {
         const radioButton = document.querySelector(`input[name="category"][value="${groupToEdit.category}"]`);
         console.log("groupToEdit.category:", groupToEdit.category);
         if (radioButton) {
-            radioButton.checked = true; 
-            if (groupToEdit.category === "Primary Area") {
-                selectedColorRecruitment = "rgb(255, 255, 153)";
-            } else if (groupToEdit.category === "Secondary Area") {
-                selectedColorRecruitment = "rgb(230, 230, 0)";
-            }
+            radioButton.checked = true;
+            selectedColorRecruitment = (groupToEdit.category === "Primary Area")
+                ? "rgb(255, 255, 153)"
+                : "rgb(230, 230, 0)";
             if (featureLayer) {
                 featureLayer.style = applyStyle;
             }
         } else {
             const defaultRadio = document.querySelector('input[name="category"][value="Primary Area"]');
             if (defaultRadio) {
-                defaultRadio.checked = true; 
+                defaultRadio.checked = true;
                 selectedColorRecruitment = "rgb(255, 255, 153)";
             }
         }
     }
+
     document.querySelectorAll('input[name="category"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === "Primary Area") {
-                selectedColorRecruitment = "rgb(255, 255, 153)";
-            } else if (this.value === "Secondary Area") {
-                selectedColorRecruitment = "rgb(230, 230, 0)";
-            }
+        radio.addEventListener('change', function () {
+            selectedColorRecruitment = (this.value === "Primary Area")
+                ? "rgb(255, 255, 153)"
+                : "rgb(230, 230, 0)";
             if (featureLayer) {
                 featureLayer.style = applyStyle;
             }
         });
     });
+
     const uniqueStates = new Set();
+    const processedZipCodes = new Set();
+
     const fetchPromises = groupToEdit.regions.map(placeId => {
         const region = selectedRegionsRecruitment.get(placeId);
         if (!region) return Promise.resolve();
+
+        const zip = region.postalCode;
         const clonedRegion = JSON.parse(JSON.stringify(region));
         newSelectedRegionsRecruitment.push(clonedRegion);
-        updateZipCodeInputRecruitment(region.postalCode, 'add');
+        updateZipCodeInputRecruitment(zip, 'add');
+
+        // If already processed, skip AJAX calls
+        if (processedZipCodes.has(zip)) {
+            return Promise.resolve();
+        }
+        processedZipCodes.add(zip);
+
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: "/get_state",
                 method: "GET",
-                data: {
-                    "zip_code": region.postalCode
-                },
-                success: function(stateResponse) {
+                data: { "zip_code": zip },
+                success: function (stateResponse) {
                     if (stateResponse.success) {
                         uniqueStates.add(stateResponse.data);
                         stateRecruitment.value = Array.from(uniqueStates).join(', ');
                     }
+
                     $.ajax({
                         url: "/get_data",
                         method: "GET",
-                        data: {
-                            "zip_code": region.postalCode
-                        },
-                        success: function(response) {
+                        data: { "zip_code": zip },
+                        success: function (response) {
                             if (response.success) {
                                 selectedRegionsRecruitmentDemographics.set(placeId, response.data);
                             }
                             resolve();
                         },
-                        error: function(xhr, status, error) {
-                            console.error(`Error fetching data for postal code ${region.postalCode}:`, error);
+                        error: function (xhr, status, error) {
+                            console.error(`Error fetching data for postal code ${zip}:`, error);
                             resolve();
                         }
                     });
                 },
-                error: function(xhr, status, error) {
-                    console.error(`Error fetching data for postal code ${region.postalCode}:`, error);
+                error: function (xhr, status, error) {
+                    console.error(`Error fetching state for postal code ${zip}:`, error);
                     resolve();
                 }
             });
         });
     });
+
     Promise.all(fetchPromises)
         .then(() => {
             originalRegionsRecruit = [...newSelectedRegionsRecruitment];
@@ -4253,9 +4293,11 @@ function handleEditAreaRecruitment() {
             nameRec.value = groupToEdit.name;
             recruitmentArea.value = groupToEdit.recruitmentArea;
             PotStoreCount.value = groupToEdit.PotStoreCount;
-            featureLayer.style = applyStyle;
+            if (featureLayer) {
+                featureLayer.style = applyStyle;
+            }
             updateLabels();
-            map.data.setStyle({visible: true});
+            map.data.setStyle({ visible: true });
         })
         .catch(error => {
             console.error("Error processing recruitment regions:", error);
@@ -4267,6 +4309,7 @@ function handleEditAreaRecruitment() {
             loader.style.display = "none";
         });
 }
+
 
 function updateLabelsRecruitment() {
     overlaysRecruitment.forEach(overlay => overlay.setMap(null));
@@ -4744,10 +4787,23 @@ async function createCircleAtSelectedLocation() {
     }
 }
 
+function showAddressNameOverRadialTable(){
+    const inputAddress = document.getElementById('autocomplete');
+    const franchiseDisplay = document.getElementById('franchise-display');
+
+    // Add autocomplete input value to franchise name
+    const addressValue = inputAddress.value.trim();
+        // Show above-table value
+        franchiseDisplay.textContent = `Address: ${addressValue}`;
+        franchiseDisplay.style.display = 'block';
+    }
+
+
 function showInputPanel() {
     const panel = document.getElementById("demographic-table-radial");
     if (panel) {
         panel.style.display = "block";
+        showAddressNameOverRadialTable();
         document.getElementById("demographic-table-recruitment").style.display = "none";
         document.getElementById("demographic-table").style.display = "none";
         const nameInput = document.getElementById("area-name-radial");
@@ -5034,6 +5090,8 @@ function handleSaveRadial() {
     const franchiseeNumber = document.getElementById("franchise-number-radial").value.trim();
     const city = document.getElementById("city-radial").value.trim();
     const state = document.getElementById("state-radial").value.trim();
+    const address = document.getElementById("address-radial").value.trim();
+
     activeCircle.setOptions({
         fillColor: color,
         strokeColor: color
@@ -5066,9 +5124,11 @@ function handleSaveRadial() {
             franchiseeNumber: franchiseeNumber,
             city: city,
             state: state,
+            address: address,
             demographics: demographicData,
             places: circleData.data.places || []
         }
+
     });
     saveCirclesToLocalStorage()
         .then(() => {
@@ -5079,6 +5139,7 @@ function handleSaveRadial() {
                 document.getElementById("autocomplete").value = '';
                 document.getElementById("area-name-radial").value = '';
                 document.getElementById("franchise-number-radial").value = '';
+                document.getElementById("address-radial").value = '';
                 document.getElementById("city-radial").value = '';
                 document.getElementById("state-radial").value = '';
                 const selectedColor = document.querySelector('.color-option.selected');
@@ -5100,7 +5161,7 @@ function handleSaveRadial() {
 }
 function saveCirclesToLocalStorage() {
     return new Promise((resolve, reject) => {
-        const autocompleteInput = document.getElementById("autocomplete").value || '';
+        autocompleteInput = document.getElementById("autocomplete").value || '';
 
         if (!activeCircleId || !circles.has(activeCircleId)) {
             reject("No active circle selected");
@@ -5109,7 +5170,6 @@ function saveCirclesToLocalStorage() {
 
         const value = circles.get(activeCircleId);
         const circle = value.circle;
-
         const circleData = {
             [activeCircleId]: {
                 id: activeCircleId,
@@ -5124,6 +5184,7 @@ function saveCirclesToLocalStorage() {
                 franchiseeNumber: value.data.franchiseeNumber || '',
                 city: value.data.city || '',
                 state: value.data.state || '',
+                address: value.data.address || '',
                 demographics: value.data.demographics || null,
                 places: value.data.places || [],
                 autocomplete_value: autocompleteInput
@@ -5136,19 +5197,23 @@ function saveCirclesToLocalStorage() {
             headers: { 'Content-Type': 'application/json' },
             data: JSON.stringify(circleData),
             success: function(response) {
-                if (response.success) {
+                if (response.status === "success") {
                     console.log("Success");
                     resolve();
                 } else {
                     console.log("Error saving circle data:", response.message);
                     document.getElementById("demographic-table-radial").style.display = "block";
+                    // showAddressNameOverRadialTable();
+                    document.getElementById('franchise-display').textContent = `Franchise Area: ${circleData[activeCircleId].name}`;
                     document.getElementById("ActionBtnRadial").style.display = "block";
                     document.getElementById("CloseBtnRadial").style.display = "block";
                     document.getElementById("submit-btn-radial").style.display = "none";
                     document.getElementById("input-area-radial").style.display = "none";
                     document.getElementById("autocomplete").value = '';
+                    autocompleteInput = '';
                     document.getElementById("area-name-radial").value = '';
                     document.getElementById("franchise-number-radial").value = '';
+                    document.getElementById("address-radial").value = '';
                     document.getElementById("city-radial").value = '';
                     document.getElementById("state-radial").value = '';
                     const selectedColor = document.querySelector('.color-option.selected');

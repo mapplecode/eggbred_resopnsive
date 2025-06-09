@@ -3,14 +3,12 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #fffbe6;
     min-height: 100vh;
     padding: 20px;
 }
-
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -19,7 +17,6 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
-
 .header {
     background-color: #FFD900;
     padding: 30px;
@@ -27,19 +24,16 @@ body {
     color: black;
     position: relative;
 }
-
 .header h1 {
     font-size: 3em;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
-
 .admin-controls {
     position: absolute;
     top: 20px;
     right: 20px;
 }
-
 .admin-btn {
     background: black;
     color: white;
@@ -51,26 +45,22 @@ body {
     transition: 0.3s;
     margin-left: 10px;
 }
-
 .admin-btn:hover {
     background: #FFD900;
     color: black;
     border: 2px solid black;
 }
-
 .newsletter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     background: #fff;
 }
-
 .year-column {
     border: 1px solid #FFD900;
     background-color: #fffde7;
     min-height: 500px;
     padding-bottom: 10px;
 }
-
 .year-header {
     background: #FFD900;
     color: black;
@@ -81,21 +71,17 @@ body {
     cursor: pointer;
     border-bottom: 2px solid black;
 }
-
 .year-header:hover {
     background: #ffe600;
 }
-
 .newsletter-list {
     padding: 20px;
     display: block; /* Keep visible by default */
 }
-
 .newsletter-item {
     margin: 10px 0;
     text-align: center;
 }
-
 .newsletter-link {
     color: black;
     text-decoration: none;
@@ -106,13 +92,11 @@ body {
     transition: 0.3s;
     border: 1px solid transparent;
 }
-
 .newsletter-link:hover {
     background-color: #FFD900;
     color: black;
     border-color: black;
 }
-
 .add-newsletter-item {
     color: #666;
     font-style: italic;
@@ -123,13 +107,11 @@ body {
     transition: 0.3s;
     text-align: center;
 }
-
 .add-newsletter-item:hover {
     border-color: #FFD900;
     background-color: #fff8c6;
     color: black;
 }
-
 /* Modal Styles */
 .modal {
     display: none;
@@ -142,7 +124,6 @@ body {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
 }
-
 .modal-content {
     background: #fff;
     margin: 8% auto;
@@ -152,7 +133,6 @@ body {
     max-width: 500px;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
-
 .modal h3 {
     color: black;
     margin-bottom: 20px;
@@ -169,7 +149,6 @@ body {
     color: black;
     font-weight: bold;
 }
-
 .form-group input,
 .form-group select {
     width: 100%;
@@ -178,20 +157,17 @@ body {
     border-radius: 6px;
     font-size: 1em;
 }
-
 .form-group input:focus,
 .form-group select:focus {
     border-color: #FFD900;
     outline: none;
     box-shadow: 0 0 6px rgba(255, 217, 0, 0.3);
 }
-
 .btn-group {
     display: flex;
     gap: 15px;
     justify-content: center;
 }
-
 .btn {
     padding: 12px 25px;
     border-radius: 25px;
@@ -201,36 +177,29 @@ body {
     transition: 0.3s;
     border: none;
 }
-
 .btn-primary {
     background-color: #FFD900;
     color: black;
 }
-
 .btn-primary:hover {
     background-color: #ffe600;
 }
-
 .btn-secondary {
     background-color: #eee;
     color: black;
 }
-
 .btn-secondary:hover {
     background-color: #ddd;
 }
-
 .close {
     color: #666;
     float: right;
     font-size: 26px;
     cursor: pointer;
 }
-
 .close:hover {
     color: black;
 }
-
 .edit-controls {
     display: none;
     margin-left: 10px;
@@ -239,7 +208,6 @@ body {
 .edit-controls.show {
     display: inline;
 }
-
 .edit-btn,
 .delete-btn {
     font-size: 0.8em;
@@ -249,40 +217,33 @@ body {
     cursor: pointer;
     transition: 0.3s;
 }
-
 .edit-btn {
     background: #FFD900;
     color: black;
     border: 1px solid black;
 }
-
 .edit-btn:hover {
     background: black;
     color: #FFD900;
 }
-
 .delete-btn {
     background: white;
     color: #dc3545;
     border: 1px solid #dc3545;
 }
-
 .delete-btn:hover {
     background: #dc3545;
     color: white;
 }
-
 @media (max-width: 768px) {
     .header h1 {
         font-size: 2em;
     }
-
     .admin-controls {
         position: static;
         margin-top: 10px;
         text-align: center;
     }
-
     .newsletter-grid {
         grid-template-columns: 1fr;
     }
