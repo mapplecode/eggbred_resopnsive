@@ -36,7 +36,6 @@ def init_database():
         connection = get_db_connection()
         if connection:
             cursor = connection.cursor()
-            
             # Create newsletters table
             create_table_query = """
             CREATE TABLE IF NOT EXISTS newsletters (
@@ -133,7 +132,11 @@ def add_year():
     year = data.get('year')
     if not year:
         return jsonify({'error': 'Year is required'}), 400
-    # No DB insert needed unless you want to manage years separately
     return jsonify({'message': f'Year {year} added'}), 201
+
+@app.route("/newsLetterRead", methods=["GET"])
+def newsletter_read():
+    return render_template("readNewsletter.html")
+
 if __name__ == "__main__":
     app.run(host='localhost', port=5000, debug=True)

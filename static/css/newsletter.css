@@ -18,10 +18,10 @@ body {
     overflow: hidden;
 }
 .header {
-    background-color: #FFD900;
+    background-color: #1a1a1a;
     padding: 30px;
     text-align: center;
-    color: black;
+    color:  #FFD900;
     position: relative;
 }
 .header h1 {
@@ -35,8 +35,8 @@ body {
     right: 20px;
 }
 .admin-btn {
-    background: black;
-    color: white;
+    background: #FFD900;
+    color: black;
     border: none;
     padding: 10px 18px;
     border-radius: 20px;
@@ -46,8 +46,8 @@ body {
     margin-left: 10px;
 }
 .admin-btn:hover {
-    background: #FFD900;
-    color: black;
+    background: black;
+    color: #FFD900;
     border: 2px solid black;
 }
 .newsletter-grid {
@@ -62,8 +62,8 @@ body {
     padding-bottom: 10px;
 }
 .year-header {
-    background: #FFD900;
-    color: black;
+    background: #1a1a1a;
+    color: #FFD900;
     text-align: center;
     padding: 20px;
     font-size: 1.6em;
@@ -73,6 +73,7 @@ body {
 }
 .year-header:hover {
     background: #ffe600;
+    color: #000;
 }
 .newsletter-list {
     padding: 20px;

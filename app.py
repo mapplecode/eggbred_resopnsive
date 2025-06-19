@@ -332,7 +332,7 @@ def save_regions_recruitment():
     data = request.get_json()
     selectedRegionsRecruitment = data.get('selectedRegionsRecruitment', [])
     selectedRegionGroupsRecruitment = data.get('selectedRegionGroupsRecruitment', [])
-
+    PotStoreCount = 1
     if not selectedRegionsRecruitment or not selectedRegionGroupsRecruitment:
         return jsonify({'status': 'error', 'message': 'No data to save'})
 
@@ -360,7 +360,7 @@ def save_regions_recruitment():
                         json.dumps(group['demographics']),
                         group.get('Under Construction'),
                         group.get('recruitmentArea', ''),
-                        group.get('PotStoreCount', 0),
+                        PotStoreCount,
                         zipCodesRecruitment,  # Store zip codes as a single string
                         group.get('stateRecruitment', ''),
                         group.get('category', 'Primary Area')
@@ -466,7 +466,7 @@ def update_region_group_recruitment():
     classification_text = data.get('classificationText', "Under Construction")
     regions = data.get('regions', [])
     recruitmentArea = data.get('recruitmentArea', '')
-    PotStoreCount = data.get('PotStoreCount', 0)
+    PotStoreCount = 1
     zipCodesRecruitment = data.get('zipCodesRecruitment', [])
     stateRecruitment = data.get('stateRecruitment', '')
     category = data.get('category', 'Primary Area')

@@ -1858,7 +1858,7 @@ function handleRecruitmentSave() {
     localStorage.setItem('isRecruitmentClicked', 'true');
     const name = document.getElementById("area-name-recruitment").value.trim();
     const recruitmentArea = document.getElementById("recruitmentArea").value.trim();
-    const PotStoreCount = parseInt(document.getElementById("PotStoreCount").value.trim(), 10);
+    // const PotStoreCount = parseInt(document.getElementById("PotStoreCount").value.trim(), 10);
     const zipCodesRecruitment = document.getElementById("zipCodesRecruitment").value.trim().split(',').map(zip => zip.trim());
     const stateRecruitment = document.getElementById("stateRecruitment").value.trim();
     const selectedCategory = document.querySelector('input[name="category"]:checked')?.value || 'Primary Area';
@@ -1885,7 +1885,7 @@ function handleRecruitmentSave() {
                 demographics: groupDemographics,
                 classificationText: selectedClassificationTextRecruitment || "Recruitment Analysis",
                 recruitmentArea: recruitmentArea,
-                PotStoreCount: PotStoreCount,
+                // PotStoreCount: PotStoreCount,
                 zipCodesRecruitment: zipCodesRecruitment,
                 stateRecruitment: stateRecruitment,
                 category: selectedCategory, 
@@ -1915,7 +1915,7 @@ function handleRecruitmentSave() {
                         existingGroup.demographics = groupDemographics;
                         existingGroup.classificationText = selectedClassificationTextRecruitment || "Recruitment Analysis";
                         existingGroup.recruitmentArea = recruitmentArea;
-                        existingGroup.PotStoreCount = PotStoreCount;
+                        // existingGroup.PotStoreCount = PotStoreCount;
                         existingGroup.zipCodesRecruitment = zipCodesRecruitment;
                         existingGroup.stateRecruitment = stateRecruitment;
                         existingGroup.category = selectedCategory;
@@ -1956,7 +1956,7 @@ function handleRecruitmentSave() {
             demographics: groupDemographics,
             classificationText: selectedClassificationTextRecruitment || "Recruitment Analysis",
             recruitmentArea: recruitmentArea,
-            PotStoreCount: PotStoreCount,
+            // PotStoreCount: PotStoreCount,
             zipCodesRecruitment: zipCodesRecruitment,
             stateRecruitment: stateRecruitment,
             category: selectedCategory, 
@@ -4167,14 +4167,14 @@ function handleEditAreaRecruitment() {
     const inputAreaRec = document.getElementById("input-area-recruitment");
     const nameRec = document.getElementById("area-name-recruitment");
     const recruitmentArea = document.getElementById("recruitmentArea");
-    const PotStoreCount = document.getElementById("PotStoreCount");
+    // const PotStoreCount = document.getElementById("PotStoreCount");
     const zipCodesRecruitment = document.getElementById("zipCodesRecruitment");
     const stateRecruitment = document.getElementById("stateRecruitment");
 
     zipCodesRecruitment.value = "";
     stateRecruitment.value = "";
     recruitmentArea.value = "";
-    PotStoreCount.value = "";
+    // PotStoreCount.value = "";
 
     loader.style.display = "block";
     RecruitmentViewRight.style.display = "none";
@@ -4292,7 +4292,7 @@ function handleEditAreaRecruitment() {
             inputAreaRec.style.display = "block";
             nameRec.value = groupToEdit.name;
             recruitmentArea.value = groupToEdit.recruitmentArea;
-            PotStoreCount.value = groupToEdit.PotStoreCount;
+            // PotStoreCount.value = groupToEdit.PotStoreCount;
             if (featureLayer) {
                 featureLayer.style = applyStyle;
             }
@@ -5363,6 +5363,7 @@ async function handleRadiusChange(newRadius) {
                 franchiseeNumber: circleData.data.franchiseeNumber || '',
                 city: circleData.data.city || '',
                 state: circleData.data.state || '',
+                address: circleData.data.address || '',
                 demographics: circleData.data.demographics || {},  
                 places: circleData.data.places || []
             };
