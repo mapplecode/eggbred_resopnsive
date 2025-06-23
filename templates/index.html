@@ -156,7 +156,7 @@
                 <a id="userAdmin" class="btn btn-outline-secondary me-2" onclick="window.location.href='/folder';" data-bs-toggle="tooltip" title="User Admin">
                     <img src="/static/img/settings-black.png" alt="Settings" style="height: 24px;">
                 </a>
-                <a id="logout" class="btn btn-outline-secondary" href="/Login/Login/Logout" data-bs-toggle="tooltip" title="Logout">
+                <a id="logout" class="btn btn-outline-secondary" href="/logout" data-bs-toggle="tooltip" title="Logout">
                     <img src="/static/img/logout-black.png" alt="Logout" style="height: 24px;">
                 </a>
     
@@ -195,7 +195,7 @@
                 </div>        
                 <div class="mb-3">
                     <button id="recruitmentTerritoriesBtnMob" class="btn btn-outline-secondary w-100">
-                        Sindle Store Developmemt
+                        Single Store Developmemt
                     </button>
                     <div id="recruitmentControlsMob" class="mt-2" style="display: none;">
                         <div class="btn-group w-100 d-flex justify-content-between">
@@ -1015,7 +1015,7 @@
                     </div>         
                     <div class="mb-3">
                         <button id="recruitmentTerritoriesBtn" class="btn btn-outline-secondary w-100">
-                            Sindle Store Developmemt
+                            Single Store Developmemt
                         </button>
                         <div id="recruitmentControls" class="mt-2" style="display: none;">
                             <div class="btn-group w-100 d-flex justify-content-between">
@@ -1444,6 +1444,10 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div class="d-grid gap-2">
+                            <label for="radialArea">Address Name</label>
+                            <input type="text" id="radialArea" class="form-control mb-3" placeholder="Enter Franchisee Number">
+                        </div>
                         <div class="d-grid gap-2">
                             <button id="ActionBtnRadial" type="button" class="btn btn-info">
                                 Action

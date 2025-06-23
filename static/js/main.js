@@ -4437,6 +4437,7 @@ function populateTableForCircle(circleId) {
             resetCircleHighlight(selectedCircleId);
             highlightCircle(circleId);
             RadialpopulateTable(circleData.data.demographics);
+            areaNameBelowTable(circleData.data.city);
             selectedCircleId = circleId;
         }
     } else {
@@ -4525,6 +4526,9 @@ function initAutocomplete(input) {
             console.log("No geometry details available for this address.");
         }
     });
+}
+function areaNameBelowTable(city){
+    document.getElementById("radialArea").value = city;
 }
 function RadialpopulateTable(data) {
     document.getElementById("demographic-table-radial").style.display = "block";

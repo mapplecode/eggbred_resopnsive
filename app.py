@@ -1,6 +1,7 @@
 import json
 import requests
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, redirect, request, url_for, session, flash
+from functools import wraps
 import pandas as pd
 import os
 import csv
@@ -11,6 +12,19 @@ import time
 
 app = Flask(__name__)
 API_KEY = "AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc" 
+
+app.secret_key = 'SECRET_KEY'  # Make this secure in production
+
+
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            flash("Please log in first.", "warning")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def connect_to_database():
     try:
@@ -737,8 +751,38 @@ def load_csv_data():
         return None 
 
 @app.route("/")
+@login_required
 def hello_world():
     return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        db = connect_to_database()
+        if db:
+            cursor = db.cursor(dictionary=True)
+            query = "SELECT * FROM users WHERE username = %s AND password = %s"
+            cursor.execute(query, (username, password))
+            user = cursor.fetchone()
+            cursor.close()
+            db.close()
+            
+            if user:
+                session['logged_in'] = True
+                session['username'] = user['username']
+                return redirect(url_for('hello_world'))
+            else:
+                flash("Invalid username or password", "danger")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("Logged out successfully.", "success")
+    return redirect(url_for('login'))
 
 @app.route('/readonly')
 def readonly():
