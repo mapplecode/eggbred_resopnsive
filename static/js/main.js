@@ -189,10 +189,12 @@ async function loadSavedCircles() {
     try {
         const response = await fetch('/get_all_circles');
         const result = await response.json();
+        console.log("Circle's data from backend:-------", result);
         if (result.status === 'success') {
             const serverCircles = result.data;
             Object.entries(serverCircles).forEach(([id, data]) => {
                 const center = new google.maps.LatLng(data.center.lat, data.center.lng);
+                // Create the circle
                 const circle = new google.maps.Circle({
                     map: map,
                     center: center,
@@ -204,6 +206,17 @@ async function loadSavedCircles() {
                     strokeWeight: 2,
                     id: id
                 });
+                // Create a pin marker at the center
+                const pinMarker = new google.maps.Marker({
+                    position: center,
+                    map: map,
+                    icon: {
+                        url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png", // change if needed
+                        scaledSize: new google.maps.Size(32, 32)
+                    },
+                    title: data.name
+                });
+                // Create a label marker (with invisible icon to only show text)
                 const label = new google.maps.Marker({
                     position: center,
                     map: map,
@@ -216,23 +229,24 @@ async function loadSavedCircles() {
                     },
                     icon: {
                         path: google.maps.SymbolPath.CIRCLE,
-                        scale: 0
+                        scale: 0 // invisible icon
                     }
                 });
+                // Store all in the map for reference
                 circles.set(id, {
                     circle: circle,
+                    pin: pinMarker,
                     label: label,
                     data: data
                 });
+                // Circle click listener
                 circle.addListener("click", () => {
                     activeCircle = circle;
                     activeCircleId = id;
-                    // showInputPanel();
                     document.getElementById("submit-btn-radial").style.display = "none";
                     populateTableForCircle(id);
                 });
             });
-            // setupMapClickListener();
         } else {
             console.error('Error fetching circles from server:', result.message);
         }
