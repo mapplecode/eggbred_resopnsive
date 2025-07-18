@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 app = Flask(__name__)
-API_KEY = "AIzaSyCmxt9MdmhDOTDpVz3xLriP_uIe8bCTApc" 
+API_KEY = "AIzaSy***********************TApc" 
 
 app.secret_key = 'SECRET_KEY'  # Make this secure in production
 
